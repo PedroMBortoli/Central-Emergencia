@@ -59,8 +59,10 @@ dados é lido por caminho relativo (`data/ocorrencias.csv`).
 ## Estruturas implementadas e onde foram aplicadas
 
 - **Tabela hash** (`src/estruturas/TabelaHash.java`): consulta rápida de ocorrências.
+- **Trie** (`src/estruturas/Trie.java`): busca por prefixo.
+- **Algoritmo guloso** (`src/modulos/OrdenadorAtendimento.java`): definição da ordem de atendimento.
 
-(demais estruturas a definir)
+(detalhes de cada aplicação a preencher conforme a implementação avança)
 
 ## Justificativas das escolhas
 
