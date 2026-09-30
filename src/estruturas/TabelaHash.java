@@ -18,6 +18,7 @@ public class TabelaHash <K, V> {
 
     private LinkedList<Par<K,V>>[] buckets;
     private int capacidade;
+    private int tamanhoTabela;
 
     public TabelaHash(int capacidadeInicial){
         this.capacidade = capacidadeInicial;
@@ -95,6 +96,22 @@ public class TabelaHash <K, V> {
         return null;
     }
 
+    private void rehash(){
+
+        //referencia para o vetor de dados antigos
+        LinkedList<Par<K,V>>[] antigos = buckets;
+        capacidade = capacidade*2;
+        buckets = new LinkedList[capacidade];
+        tamanhoTabela = 0;
+
+        for(LinkedList<Par<K,V>> bucket : antigos){
+            if(bucket != null){
+                for(Par <K,V> par : bucket){
+                    inserir(par.chave, par.valor); //reinsere toda a tabela com nova capacidade
+                }
+            }
+        }
+    }
 }
 
 
