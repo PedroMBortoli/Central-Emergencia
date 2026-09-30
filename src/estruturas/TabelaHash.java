@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 public class TabelaHash <K, V> {
 
+    //Definição da estrutura da tabela
     private static class Par<K, V> {
 
         K chave;
@@ -24,7 +25,8 @@ public class TabelaHash <K, V> {
 
     }
 
-    private int hashCode (K chave){
+    //Métodos do hash code
+    private int calculaHash (K chave){
         String s = chave.toString();
         int hash = 0;
             for (int i = 0; i < s.length(); i++){
@@ -38,11 +40,31 @@ public class TabelaHash <K, V> {
     }
 
     private int indice (K chave){
-        int hash = hashCode(chave);
+        int hash = calculaHash(chave);
 
         //Math.abs(hash) retorna o valor em modulo de hash - nunca tera codigo negativo
         return Math.abs(hash) % capacidade;
     }
 
+    //metodos operacionais da tabelas
+    public void inserir (K chave, V valor) {
+
+        int idx = indice(chave);
+
+        //caso de ser uma posição vazia - insere o objeto nela e prepara uma lista encadeada a partir dessa posição
+        if (buckets[idx] == null) {
+            buckets[idx] = new LinkedList<>();
+        }
+
+        //para cada par definido no vetor
+        for (Par<K, V> par : buckets[idx]) {
+
+            if (par.chave.equals(chave)) {
+                par.valor = valor;
+                return;
+            }
+            buckets[idx].add(new Par<>(chave, valor));
+        }
+    }
 }
 
