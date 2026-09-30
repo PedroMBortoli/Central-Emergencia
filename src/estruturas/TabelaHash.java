@@ -47,7 +47,8 @@ public class TabelaHash <K, V> {
         return Math.abs(hash) % capacidade;
     }
 
-    //metodos operacionais da tabelas
+    //METODOS DE MANIPULAÇÃO DA ESTRUTURA DA TABELA
+
     public void inserir (K chave, V valor) {
 
         int idx = indice(chave);
@@ -64,11 +65,16 @@ public class TabelaHash <K, V> {
                 par.valor = valor;
                 return;
             }
-            buckets[idx].add(new Par<>(chave, valor));
+        }
+        buckets[idx].add(new Par<>(chave, valor));
+        tamanhoTabela++;
+
+        if((double) tamanhoTabela / capacidade > 0.75){
+            rehash();
         }
     }
 
-    public void removerHash (K chave){
+    public void remover (K chave){
 
         int idx = indice(chave);
 
@@ -78,7 +84,10 @@ public class TabelaHash <K, V> {
         }
 
         //percorre a lista e remove apenas o objeto Par<K, V> cuja a chave corresponde a passada no parâmetro do metodo
-        buckets[idx].removeIf(par -> par.chave.equals(chave));
+        boolean removeu = buckets[idx].removeIf(par -> par.chave.equals(chave));
+        if (removeu){
+            tamanhoTabela--;
+        }
     }
 
     public V buscar(K chave){
