@@ -79,6 +79,22 @@ public class TabelaHash <K, V> {
         //percorre a lista e remove apenas o objeto Par<K, V> cuja a chave corresponde a passada no parâmetro do metodo
         buckets[idx].removeIf(par -> par.chave.equals(chave));
     }
+
+    public V buscar(K chave){
+        int idx = indice(chave);
+
+        if(buckets[idx] == null){
+            return null;
+        }
+
+        for (Par<K, V> par : buckets[idx]){
+            if(par.chave.equals(chave)){
+                return par.valor;
+            }
+        }
+        return null;
+    }
+
 }
 
 
