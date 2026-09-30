@@ -1,9 +1,28 @@
 package estruturas;
 
-public class TabelaHash {
-    private static final int CAPACIDADE_INICIAL = 16;
-    private Object[] tabela;
-    private int tamanho;
+import java.util.LinkedList;
 
-    // função hash, inserir, buscar e remover serão adicionados depois
+public class TabelaHash <K, V> {
+
+    private static class Par<K, V> {
+
+        K chave;
+        V valor;
+
+        Par(K chave, V valor){
+            this.chave = chave;
+            this.valor = valor;
+        }
+    }
+
+    private LinkedList<Par<K,V>>[] buckets;
+    private int capacidade;
+
+    public TabelaHash(int capacidadeInicial){
+        this.capacidade = capacidadeInicial;
+        this.buckets = new LinkedList[capacidade];
+
+    }
+
 }
+
