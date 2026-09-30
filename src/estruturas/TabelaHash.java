@@ -66,5 +66,19 @@ public class TabelaHash <K, V> {
             buckets[idx].add(new Par<>(chave, valor));
         }
     }
+
+    public void removerHash (K chave){
+
+        int idx = indice(chave);
+
+        //se nao tiver nada nao precisa remover
+        if (buckets[idx] == null){
+            return;
+        }
+
+        //percorre a lista e remove apenas o objeto Par<K, V> cuja a chave corresponde a passada no parâmetro do metodo
+        buckets[idx].removeIf(par -> par.chave.equals(chave));
+    }
 }
+
 
