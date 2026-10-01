@@ -38,8 +38,8 @@ public class LeitorCSV {
                 String regiao = campos[6].isEmpty() ? "DESCONHECIDA" : campos[6];
 
                 Ocorrencia o = new Ocorrencia(
-                        id, tipo, campos[2], regiao, prioridade, campos[5],
-                        "Pendente", pessoas, tempo, null, campos[7], motivo, "Não atribuída"
+                        id, tipo.toUpperCase(), campos[2], regiao, prioridade, campos[5],
+                        "PENDENTE", pessoas, tempo, null, campos[7], motivo, "NÃO ATRIBUÍDA"
                 );
 
                 lista.add(o);
