@@ -32,4 +32,6 @@ public class ConsultaRapida {
         return resultado;
     }
 
+    //implementa por tipo e por região
+
 }

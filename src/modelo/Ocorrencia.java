@@ -46,7 +46,9 @@ public class Ocorrencia {
                 "Região: " + regiao + "\n" +
                 "Prioridade: " + prioridade + "\n" +
                 "Data/Hora: " + dataHora + "\n" +
-                "Status: " + status;
+                "Status: " + status + "\n" +
+                "Motivo: " + motivo + "\n" +
+                "Endereço: " + endereco + "\n";
     }
 
     //SETTERS:

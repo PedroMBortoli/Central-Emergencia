@@ -1,6 +1,8 @@
 package estruturas;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
 public class TabelaHash <K, V> {
 
@@ -74,13 +76,13 @@ public class TabelaHash <K, V> {
         }
     }
 
-    public void remover (K chave){
+    public boolean remover (K chave){
 
         int idx = indice(chave);
 
         //se nao tiver nada nao precisa remover
         if (buckets[idx] == null){
-            return;
+            return false;
         }
 
         //percorre a lista e remove apenas o objeto Par<K, V> cuja a chave corresponde a passada no parâmetro do metodo
@@ -88,6 +90,7 @@ public class TabelaHash <K, V> {
         if (removeu){
             tamanhoTabela--;
         }
+        return removeu;
     }
 
     public V buscar(K chave){
@@ -103,6 +106,25 @@ public class TabelaHash <K, V> {
             }
         }
         return null;
+    }
+
+    //percorre todos os buckets e devolve todos os valores guardados na tabela
+    //(retorna List<V> em vez de V[] porque Java nao permite criar array de tipo generico)
+    public List<V> listarTodos(){
+        List<V> resultado = new ArrayList<>();
+
+        for (LinkedList<Par<K,V>> bucket : buckets){
+            if (bucket != null){
+                for (Par<K,V> par : bucket){
+                    resultado.add(par.valor);
+                }
+            }
+        }
+        return resultado;
+    }
+
+    public int getTamanho(){
+        return tamanhoTabela;
     }
 
     private void rehash(){
