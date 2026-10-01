@@ -11,12 +11,14 @@ public class ConsultaRapida {
     private TabelaHash<String, Ocorrencia> indicePorId = new TabelaHash<>(16);
     private Trie indicePorDescricao = new Trie();
     private TabelaHash<String, List<String>> indicePorTipo = new TabelaHash<>(16);
+    private TabelaHash<String, List<String>> indicePorRegiao = new TabelaHash<>(16);
 
     public void indexar(List<Ocorrencia> ocorrencias){
         for (Ocorrencia o: ocorrencias){
             indicePorId.inserir(o.getId(), o);
             indicePorDescricao.inserir(o.getDescricao(), o);
             adicionarEmLista(indicePorTipo, o.getTipo(), o.getId());
+            adicionarEmLista(indicePorRegiao, o.getRegiao(), o.getId());
         }
     }
 
@@ -36,6 +38,11 @@ public class ConsultaRapida {
 
     public List<Ocorrencia> buscarPorTipo(String tipo){
         List<String> ids = indicePorTipo.buscar(normalizar(tipo));
+        return resolverIds(ids);
+    }
+
+    public List<Ocorrencia> buscarPorRegiao(String regiao){
+        List<String> ids = indicePorRegiao.buscar(normalizar(regiao));
         return resolverIds(ids);
     }
 
@@ -69,7 +76,5 @@ public class ConsultaRapida {
     private String normalizar(String valor) {
         return valor == null ? "" : valor.trim().toUpperCase();
     }
-
-    //implementa por região
 
 }
