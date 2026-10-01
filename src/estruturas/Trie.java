@@ -1,9 +1,6 @@
 package estruturas;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Trie {
 
@@ -40,6 +37,40 @@ public class Trie {
 
         atual.fimDePalavra = true;
         atual.valores.add(valor);
+    }
+
+    private  void coletarValores (No no, List<Object> resultado){
+        if(no.fimDePalavra){
+            resultado.addAll(no.valores);
+        }
+
+        for(No filho : no.filhos.values()){
+            coletarValores(filho, resultado);
+        }
+
+    }
+
+    public List<Object> buscarPorPrefixo(String prefixo){
+        String prefixoNormalizado = prefixo.toUpperCase();
+        No atual = raiz;
+
+        for(int i = 0; i < prefixoNormalizado.length(); i++){
+            char c = prefixoNormalizado.charAt(i);
+            No proximo = atual.filhos.get(c);
+
+            //caso do prefixo nao existir na arvore
+            if(proximo == null){
+                return new LinkedList<>();
+
+            }
+            atual = proximo;
+
+        }
+
+        List<Object> resultado = new LinkedList<>();
+        coletarValores (atual, resultado);
+        return  resultado;
+
     }
 
 }
