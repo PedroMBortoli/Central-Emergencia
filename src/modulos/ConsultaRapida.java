@@ -10,11 +10,13 @@ public class ConsultaRapida {
 
     private TabelaHash<String, Ocorrencia> indicePorId = new TabelaHash<>(16);
     private Trie indicePorDescricao = new Trie();
+    private TabelaHash<String, List<String>> indicePorTipo = new TabelaHash<>(16);
 
     public void indexar(List<Ocorrencia> ocorrencias){
         for (Ocorrencia o: ocorrencias){
             indicePorId.inserir(o.getId(), o);
             indicePorDescricao.inserir(o.getDescricao(), o);
+            adicionarEmLista(indicePorTipo, o.getTipo(), o.getId());
         }
     }
 
@@ -32,6 +34,42 @@ public class ConsultaRapida {
         return resultado;
     }
 
-    //implementa por tipo e por região
+    public List<Ocorrencia> buscarPorTipo(String tipo){
+        List<String> ids = indicePorTipo.buscar(normalizar(tipo));
+        return resolverIds(ids);
+    }
+
+    // insere o id na lista de ids da categoria (tipo/regiao), criando a lista
+    // se ainda nao existir uma para aquela chave
+    private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
+        List<String> lista = indice.buscar(normalizar(chave));
+        if (lista == null) {
+            lista = new ArrayList<>();
+            indice.inserir(normalizar(chave), lista);
+        }
+        lista.add(id);
+    }
+
+    // troca uma lista de ids pelas ocorrencias de verdade, buscando cada uma no indice por id
+    private List<Ocorrencia> resolverIds(List<String> ids) {
+        List<Ocorrencia> resultado = new ArrayList<>();
+        if (ids == null) {
+            return resultado; // categoria nao encontrada: lista vazia, nao null
+        }
+        for (String id : ids) {
+            Ocorrencia o = indicePorId.buscar(id);
+            if (o != null) {
+                resultado.add(o);
+            }
+        }
+        return resultado;
+    }
+
+    // mesmo padrao de normalizacao usado no cadastro: sem espaco nas pontas, maiusculo
+    private String normalizar(String valor) {
+        return valor == null ? "" : valor.trim().toUpperCase();
+    }
+
+    //implementa por região
 
 }
