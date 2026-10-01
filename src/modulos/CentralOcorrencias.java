@@ -14,10 +14,12 @@ import java.util.List;
 
 public class CentralOcorrencias {
     private TabelaHash<String, Ocorrencia> tabela;
+    private ConsultaRapida consultaRapida;
     private int proximoId;
 
     public CentralOcorrencias() {
         this.tabela = new TabelaHash<>(16);
+        this.consultaRapida = new ConsultaRapida();
         this.proximoId = 1;
     }
 
@@ -28,6 +30,8 @@ public class CentralOcorrencias {
              Ocorrencia o = lista.get(i);
              tabela.inserir(o.getId(), o);
          }
+
+         consultaRapida.indexar(lista);
 
          proximoId = lista.size() + 1;
          return  lista.size();
@@ -51,6 +55,7 @@ public class CentralOcorrencias {
         Ocorrencia o = new Ocorrencia(id, tipo.trim().toUpperCase(), descricao.trim().toUpperCase(), regiao.trim().toUpperCase(), prioridade, dataHora, "PENDENTE", pessoas, tempo, null , endereco.trim().toUpperCase(), motivo.trim().toUpperCase(), "NÃO ATRIBUÍDA");
 
         tabela.inserir(id, o);
+        consultaRapida.adicionar(o);
 
         return o;
     }
@@ -121,7 +126,13 @@ public class CentralOcorrencias {
     public boolean remover(int id) {
         String idBuscar = String.valueOf(id);
 
-        return tabela.remover(idBuscar);
+        boolean removido = tabela.remover(idBuscar);
+
+        if (removido) {
+            consultaRapida.remover(idBuscar);
+        }
+
+        return removido;
     }
 
     public List<Ocorrencia> listar() {
@@ -134,6 +145,12 @@ public class CentralOcorrencias {
         String idBuscar = String.valueOf(id);
 
         return tabela.buscar(idBuscar);
+    }
+
+    // da acesso aos indices de busca rapida (id, descricao por prefixo, tipo, regiao),
+    // sempre sincronizados com o que esta na tabela principal (carregar/cadastrar/remover)
+    public ConsultaRapida getConsultaRapida() {
+        return consultaRapida;
     }
 
 

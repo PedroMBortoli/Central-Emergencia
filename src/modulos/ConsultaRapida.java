@@ -15,11 +15,18 @@ public class ConsultaRapida {
 
     public void indexar(List<Ocorrencia> ocorrencias){
         for (Ocorrencia o: ocorrencias){
-            indicePorId.inserir(o.getId(), o);
-            indicePorDescricao.inserir(o.getDescricao(), o);
-            adicionarEmLista(indicePorTipo, o.getTipo(), o.getId());
-            adicionarEmLista(indicePorRegiao, o.getRegiao(), o.getId());
+            adicionar(o);
         }
+    }
+
+    // indexa uma unica ocorrencia nos 4 indices (id, descricao, tipo, regiao). Usado tanto
+    // pelo indexar() em lote (carga inicial) quanto por quem cadastra uma ocorrencia nova
+    // depois da carga.
+    public void adicionar(Ocorrencia o){
+        indicePorId.inserir(o.getId(), o);
+        indicePorDescricao.inserir(o.getDescricao(), o);
+        adicionarEmLista(indicePorTipo, o.getTipo(), o.getId());
+        adicionarEmLista(indicePorRegiao, o.getRegiao(), o.getId());
     }
 
     public Ocorrencia buscarPorId(String id){
@@ -46,6 +53,22 @@ public class ConsultaRapida {
         return resolverIds(ids);
     }
 
+    // tira a ocorrencia dos 4 indices (id, descricao, tipo, regiao). Devolve false se
+    // o id nao estava indexado (nada a fazer) - nao lanca excecao nesse caso.
+    public boolean remover(String id){
+        Ocorrencia o = indicePorId.buscar(id);
+        if (o == null){
+            return false;
+        }
+
+        indicePorId.remover(id);
+        indicePorDescricao.remover(o.getDescricao(), o);
+        removerDeLista(indicePorTipo, o.getTipo(), id);
+        removerDeLista(indicePorRegiao, o.getRegiao(), id);
+
+        return true;
+    }
+
     // insere o id na lista de ids da categoria (tipo/regiao), criando a lista
     // se ainda nao existir uma para aquela chave
     private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
@@ -55,6 +78,20 @@ public class ConsultaRapida {
             indice.inserir(normalizar(chave), lista);
         }
         lista.add(id);
+    }
+
+    // tira o id da lista de uma categoria (tipo/regiao); se a lista ficar vazia,
+    // remove a propria entrada do indice para nao acumular categorias "mortas"
+    private void removerDeLista(TabelaHash<String, List<String>> indice, String chave, String id) {
+        String chaveNormalizada = normalizar(chave);
+        List<String> lista = indice.buscar(chaveNormalizada);
+        if (lista == null) {
+            return;
+        }
+        lista.remove(id);
+        if (lista.isEmpty()) {
+            indice.remover(chaveNormalizada);
+        }
     }
 
     // troca uma lista de ids pelas ocorrencias de verdade, buscando cada uma no indice por id
