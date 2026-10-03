@@ -104,5 +104,13 @@ public class Organizador {
         }
         return resultado;
     }
-    // TODO: filtrarPorRegiao / filtrarPorTipo (delegando para consultaRapida)
+    // regiao e tipo ja tem indice proprio no ConsultaRapida (Modulo 2); aqui so
+    // delega, pra nao duplicar os indices de categoria
+    public List<Ocorrencia> filtrarPorRegiao(String regiao) {
+        return consultaRapida.buscarPorRegiao(regiao);
+    }
+
+    public List<Ocorrencia> filtrarPorTipo(String tipo) {
+        return consultaRapida.buscarPorTipo(tipo);
+    }
 }
