@@ -36,7 +36,24 @@ public class Organizador {
         return valor == null ? "" : valor.trim().toUpperCase();
     }
 
-    // TODO: remover(String id, String status)
+    // tira o id da lista de status; se a lista ficar vazia, remove a propria
+    // entrada do indice para nao acumular status "mortos" (mesmo padrao do ConsultaRapida)
+    public void remover(String id, String status) {
+        removerDeLista(indicePorStatus, status, id);
+    }
+
+    private void removerDeLista(TabelaHash<String, List<String>> indice, String chave, String id) {
+        String chaveNormalizada = normalizar(chave);
+        List<String> lista = indice.buscar(chaveNormalizada);
+        if (lista == null) {
+            return;
+        }
+        lista.remove(id);
+        if (lista.isEmpty()) {
+            indice.remover(chaveNormalizada);
+        }
+    }
+
     // TODO: atualizarStatus(String id, String statusAntigo, String statusNovo)
     // TODO: filtrarPorStatus(String status)
     // TODO: filtrarPorPrioridadeMinima(List<Ocorrencia> todas, int limiar)
