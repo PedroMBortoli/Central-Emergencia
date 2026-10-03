@@ -81,7 +81,28 @@ public class Organizador {
         }
         return resultado;
     }
-    // TODO: filtrarPorPrioridadeMinima(List<Ocorrencia> todas, int limiar)
-    // TODO: filtrarPorPessoasEnvolvidas(List<Ocorrencia> todas, int minimo)
+    // filtro por faixa (prioridade >= limiar): nao faz sentido indexar isso em hash
+    // (hash so resolve igualdade), entao percorre a lista completa recebida
+    // (ex: CentralOcorrencias.listar()) aplicando o criterio
+    public List<Ocorrencia> filtrarPorPrioridadeMinima(List<Ocorrencia> todas, int limiar) {
+        List<Ocorrencia> resultado = new ArrayList<>();
+        for (Ocorrencia o : todas) {
+            if (o.getPrioridade() >= limiar) {
+                resultado.add(o);
+            }
+        }
+        return resultado;
+    }
+
+    // mesmo raciocinio do filtro por prioridade: comparacao numerica, varredura simples
+    public List<Ocorrencia> filtrarPorPessoasEnvolvidas(List<Ocorrencia> todas, int minimo) {
+        List<Ocorrencia> resultado = new ArrayList<>();
+        for (Ocorrencia o : todas) {
+            if (o.getPessoasEnvolvidas() >= minimo) {
+                resultado.add(o);
+            }
+        }
+        return resultado;
+    }
     // TODO: filtrarPorRegiao / filtrarPorTipo (delegando para consultaRapida)
 }
