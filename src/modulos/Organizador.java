@@ -54,7 +54,12 @@ public class Organizador {
         }
     }
 
-    // TODO: atualizarStatus(String id, String statusAntigo, String statusNovo)
+    // move o id da lista do status antigo para a lista do status novo; usado
+    // quando CentralOcorrencias.alterarStatus muda o status de uma ocorrencia ja indexada
+    public void atualizarStatus(String id, String statusAntigo, String statusNovo) {
+        removerDeLista(indicePorStatus, statusAntigo, id);
+        adicionarEmLista(indicePorStatus, statusNovo, id);
+    }
     // TODO: filtrarPorStatus(String status)
     // TODO: filtrarPorPrioridadeMinima(List<Ocorrencia> todas, int limiar)
     // TODO: filtrarPorPessoasEnvolvidas(List<Ocorrencia> todas, int minimo)
