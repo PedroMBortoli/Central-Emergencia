@@ -55,7 +55,7 @@ public class CentralOcorrencias {
         int pessoas = RegraPessoas.calcular(motivo);
         int tempo = RegraTempo.calcular(tipo, prioridade);
 
-        Ocorrencia o = new Ocorrencia(id, tipo.trim().toUpperCase(), descricao.trim().toUpperCase(), regiao.trim().toUpperCase(), prioridade, dataHora, "PENDENTE", pessoas, tempo, null , endereco.trim().toUpperCase(), motivo.trim().toUpperCase(), "NÃO ATRIBUÍDA");
+        Ocorrencia o = new Ocorrencia(id, tipo.trim().toUpperCase(), descricao.trim().toUpperCase(), regiao.trim().toUpperCase(), prioridade, dataHora, "PENDENTE", pessoas, tempo, endereco.trim().toUpperCase(), motivo.trim().toUpperCase(), "NÃO ATRIBUÍDA");
 
         tabela.inserir(id, o);
         consultaRapida.adicionar(o);

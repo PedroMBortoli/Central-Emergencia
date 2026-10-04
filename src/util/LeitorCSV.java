@@ -39,7 +39,7 @@ public class LeitorCSV {
 
                 Ocorrencia o = new Ocorrencia(
                         id, tipo.toUpperCase(), campos[2], regiao, prioridade, campos[5],
-                        "PENDENTE", pessoas, tempo, null, campos[7], motivo, "NÃO ATRIBUÍDA"
+                        "PENDENTE", pessoas, tempo, campos[7], motivo, "NÃO ATRIBUÍDA"
                 );
 
                 lista.add(o);
