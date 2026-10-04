@@ -15,11 +15,13 @@ import java.util.List;
 public class CentralOcorrencias {
     private TabelaHash<String, Ocorrencia> tabela;
     private ConsultaRapida consultaRapida;
+    private Organizador organizador;
     private int proximoId;
 
     public CentralOcorrencias() {
         this.tabela = new TabelaHash<>(16);
         this.consultaRapida = new ConsultaRapida();
+        this.organizador = new Organizador(consultaRapida);
         this.proximoId = 1;
     }
 
@@ -29,6 +31,7 @@ public class CentralOcorrencias {
          for(int i = 0; i < lista.size(); i++) {
              Ocorrencia o = lista.get(i);
              tabela.inserir(o.getId(), o);
+             organizador.adicionar(o);
          }
 
          consultaRapida.indexar(lista);
@@ -56,6 +59,7 @@ public class CentralOcorrencias {
 
         tabela.inserir(id, o);
         consultaRapida.adicionar(o);
+        organizador.adicionar(o);
 
         return o;
     }
@@ -77,6 +81,8 @@ public class CentralOcorrencias {
             return false;
         }
 
+        String statusAntigo = o.getStatus();
+        organizador.atualizarStatus(idBuscar, statusAntigo, status);
         o.setStatus(status);
 
         return true;
@@ -125,11 +131,13 @@ public class CentralOcorrencias {
 
     public boolean remover(int id) {
         String idBuscar = String.valueOf(id);
+        Ocorrencia o = tabela.buscar(idBuscar);
 
         boolean removido = tabela.remover(idBuscar);
 
         if (removido) {
             consultaRapida.remover(idBuscar);
+            organizador.remover(idBuscar, o.getStatus());
         }
 
         return removido;
@@ -153,5 +161,10 @@ public class CentralOcorrencias {
         return consultaRapida;
     }
 
+    // da acesso aos filtros de organizacao (status, prioridade, pessoas envolvidas, regiao, tipo),
+    // sempre sincronizados com cadastro/remocao/alteracao de status
+    public Organizador getOrganizador() {
+        return organizador;
+    }
 
 }
