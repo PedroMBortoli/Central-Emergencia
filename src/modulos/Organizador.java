@@ -113,4 +113,28 @@ public class Organizador {
     public List<Ocorrencia> filtrarPorTipo(String tipo) {
         return consultaRapida.buscarPorTipo(tipo);
     }
+
+    // versoes que filtram uma lista ja filtrada antes, pra poder combinar restricoes
+    // (ex: pendentes -> da regiao X -> do tipo EMS)
+    public List<Ocorrencia> filtrarPorRegiao(List<Ocorrencia> lista, String regiao) {
+        String regiaoNormalizada = normalizar(regiao);
+        List<Ocorrencia> resultado = new ArrayList<>();
+        for (Ocorrencia o : lista) {
+            if (normalizar(o.getRegiao()).equals(regiaoNormalizada)) {
+                resultado.add(o);
+            }
+        }
+        return resultado;
+    }
+
+    public List<Ocorrencia> filtrarPorTipo(List<Ocorrencia> lista, String tipo) {
+        String tipoNormalizado = normalizar(tipo);
+        List<Ocorrencia> resultado = new ArrayList<>();
+        for (Ocorrencia o : lista) {
+            if (normalizar(o.getTipo()).equals(tipoNormalizado)) {
+                resultado.add(o);
+            }
+        }
+        return resultado;
+    }
 }
