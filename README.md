@@ -29,8 +29,8 @@ O programa deve ser executado a partir da raiz do projeto, pois o arquivo de
 dados é lido por caminho relativo (`data/ocorrencias.csv`).
 
 > **Estado atual:** os cinco módulos estão implementados como classes em
-> `src/modulos/`. O menu interativo (`src/Main.java`), que dá acesso a eles e
-> aos modos de interação, ainda está em desenvolvimento.
+> `src/modulos/`. O menu interativo (`src/Main.java`) dá acesso a eles e aos
+> modos de interação (Investigação, Operação Resgate e Consulta Rápida).
 
 ## Fonte de dados
 
@@ -494,11 +494,6 @@ de dados exigidas no trabalho.
   função hash, o cálculo do índice, a política de tratamento de colisões
   (encadeamento), o controle do fator de carga e o rehash são implementados pelo
   grupo.
-- `java.util.HashMap` (em `Trie`): associa cada caractere ao nó filho
-  correspondente. A estrutura da Trie (descida pelos caracteres, coleta da
-  subárvore na busca por prefixo, remoção com poda dos nós vazios) é
-  implementada pelo grupo. O mapa evita reservar um vetor de filhos para todos
-  os caracteres possíveis em cada nó.
 - `java.util.Comparator` (em `OrdenadorAtendimento`): apenas define o critério
   de comparação passado ao merge sort; o algoritmo de ordenação é do grupo.
 - `java.time.LocalDateTime`, `java.time.format.DateTimeFormatter`: data/hora
