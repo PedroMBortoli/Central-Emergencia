@@ -10,17 +10,23 @@ import java.util.Scanner;
 public class Main {
 
     private static final String ARQUIVO_DADOS = "data/ocorrencias.csv";
+    private static final String ARQUIVO_TESTE_INTEGRIDADE = "data/ocorrencias_teste_integridade.csv";
 
     private static final Scanner scanner = new Scanner(System.in);
-    private static final CentralOcorrencias central = new CentralOcorrencias();
-    private static final Integridade integridade = new Integridade(central);
     private static final OrdenadorAtendimento ordenador = new OrdenadorAtendimento();
+
+    private static CentralOcorrencias central;
+    private static Integridade integridade;
+    private static String arquivoCarregado;
 
     public static void main(String[] args) {
         System.out.println("Central de Emergências: Operação Resgate");
 
-        int carregadas = central.carregarDados(ARQUIVO_DADOS);
-        System.out.println(carregadas + " ocorrências carregadas de " + ARQUIVO_DADOS + ".");
+        carregarBase(ARQUIVO_DADOS);
+        if (central == null) {
+            System.out.println("Não foi possível iniciar sem dados. Execute o programa a partir da raiz do projeto.");
+            return;
+        }
 
         boolean sair = false;
         while (!sair) {
@@ -209,7 +215,9 @@ public class Main {
         System.out.println("3 - Listar ocorrências inconsistentes");
         System.out.println("4 - Detectar duplicatas (mesmo conteúdo)");
         System.out.println("5 - Detectar duplicatas divergentes (mesmo evento, conteúdo diferente)");
-        System.out.println("6 - Comparar com um arquivo");
+        System.out.println("6 - Comparar com o arquivo carregado (" + arquivoCarregado + ")");
+        System.out.println("7 - Simular adulteração de um registro (demonstração)");
+        System.out.println("8 - Carregar outra base de dados");
         System.out.print("Escolha uma opção: ");
 
         switch (lerOpcao()) {
@@ -223,17 +231,99 @@ public class Main {
             case 3 -> imprimirResumo(integridade.verificarInconsistentes());
             case 4 -> imprimirGrupos(integridade.detectarDuplicatas());
             case 5 -> imprimirGrupos(integridade.detectarDuplicatasDivergentes());
-            case 6 -> {
-                String caminho = lerTexto("Caminho do arquivo a comparar: ");
-                ComparacaoArquivo resultado = integridade.compararComArquivo(caminho);
-                System.out.println("Ocorrências íntegras: " + resultado.getIguais());
-                System.out.println("Ausentes na memória: " + resultado.getAusentesNaMemoria().size());
-                for (ComparacaoArquivo.Conflito c : resultado.getConflitos()) {
-                    System.out.println("Id " + c.getArmazenada().getId() + " - " + c.getDiagnostico());
-                }
-            }
+            case 6 -> compararComArquivoCarregado();
+            case 7 -> simularAdulteracao();
+            case 8 -> trocarBase();
             default -> System.out.println("Opção inválida.");
         }
+    }
+
+    // compara sempre com o arquivo que foi carregado, senao os ids nao batem
+    private static void compararComArquivoCarregado() {
+        System.out.println("Comparando a memória com " + arquivoCarregado + "...");
+        ComparacaoArquivo resultado = integridade.compararComArquivo(arquivoCarregado);
+
+        System.out.println("Ocorrências íntegras: " + resultado.getIguais());
+        System.out.println("Conflitos: " + resultado.getConflitos().size());
+        for (ComparacaoArquivo.Conflito c : resultado.getConflitos()) {
+            System.out.println("  Id " + c.getArmazenada().getId() + " - " + c.getDiagnostico());
+        }
+        System.out.println("Presentes no arquivo e ausentes na memória: " + resultado.getAusentesNaMemoria().size());
+        for (Ocorrencia o : resultado.getAusentesNaMemoria()) {
+            System.out.println("  Id " + o.getId() + " - removida ou perdida");
+        }
+    }
+
+    // so pra demonstracao: muda o registro pelo setter, sem passar pela central
+    private static void simularAdulteracao() {
+        int id = lerInteiro("Id da ocorrência: ");
+        Ocorrencia o = central.consultar(id);
+        if (o == null) {
+            System.out.println("Ocorrência não encontrada.");
+            return;
+        }
+
+        System.out.println("ATENÇÃO: altera o registro diretamente, sem passar pela Central.");
+        System.out.println("Use apenas para demonstrar a detecção de alterações e inconsistências.");
+        System.out.println("1 - Região");
+        System.out.println("2 - Descrição");
+        System.out.println("3 - Endereço");
+        System.out.println("4 - Motivo");
+        System.out.println("5 - Prioridade (sem recalcular o tempo estimado)");
+        System.out.println("6 - Status (sem validação)");
+        System.out.print("Campo a adulterar: ");
+
+        int campo = lerOpcao();
+        switch (campo) {
+            case 1 -> o.setRegiao(lerTexto("Nova região: ").trim().toUpperCase());
+            case 2 -> o.setDescricao(lerTexto("Nova descrição: ").trim().toUpperCase());
+            case 3 -> o.setEndereco(lerTexto("Novo endereço: ").trim().toUpperCase());
+            case 4 -> o.setMotivo(lerTexto("Novo motivo: ").trim().toUpperCase());
+            case 5 -> o.setPrioridade(lerInteiro("Nova prioridade: "));
+            case 6 -> o.setStatus(lerTexto("Novo status: ").trim().toUpperCase());
+            default -> {
+                System.out.println("Opção inválida.");
+                return;
+            }
+        }
+
+        // campos 1 a 4 entram no hash, 5 e 6 so aparecem na validacao
+        if (campo <= 4) {
+            System.out.println("Registro " + id + " adulterado em um campo do hash. Detecte com as opções 1, 2 ou 6.");
+        } else {
+            System.out.println("Registro " + id + " adulterado fora do hash. Detecte com a opção 3 (inconsistentes).");
+        }
+    }
+
+    private static void trocarBase() {
+        System.out.println("Base atual: " + arquivoCarregado);
+        System.out.println("1 - Base principal (" + ARQUIVO_DADOS + ")");
+        System.out.println("2 - Base de teste de integridade (" + ARQUIVO_TESTE_INTEGRIDADE + ")");
+        System.out.println("3 - Outro arquivo");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> carregarBase(ARQUIVO_DADOS);
+            case 2 -> carregarBase(ARQUIVO_TESTE_INTEGRIDADE);
+            case 3 -> carregarBase(lerTexto("Caminho do arquivo: ").trim());
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    // cria uma central nova para o arquivo; se nao carregar nada, fica com a base antiga
+    private static void carregarBase(String caminho) {
+        CentralOcorrencias nova = new CentralOcorrencias();
+        int carregadas = nova.carregarDados(caminho);
+
+        if (carregadas == 0) {
+            System.out.println("Nenhuma ocorrência carregada de " + caminho + ". A base atual foi mantida.");
+            return;
+        }
+
+        central = nova;
+        integridade = new Integridade(central);
+        arquivoCarregado = caminho;
+        System.out.println(carregadas + " ocorrências carregadas de " + caminho + ".");
     }
 
     // ===================== MÓDULO 5 / MODO OPERAÇÃO RESGATE =====================
