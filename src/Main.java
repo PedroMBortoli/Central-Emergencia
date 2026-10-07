@@ -26,9 +26,9 @@ public class Main {
         while (!sair) {
             System.out.println();
             System.out.println("===== MENU PRINCIPAL =====");
-            System.out.println("1 - Módulo 1: Central de Ocorrências (cadastro, consulta, alteração, remoção, listagem)");
+            System.out.println("1 - Módulo 1 / Central de Ocorrências (cadastro, consulta, alteração, remoção, listagem)");
             System.out.println("2 - Módulo 2 / Modo Consulta Rápida (busca por id, descrição, tipo, região, prefixo)");
-            System.out.println("3 - Módulo 3: Organização das Ocorrências (filtros por status, prioridade, pessoas, região, tipo)");
+            System.out.println("3 - Módulo 3 / Organização das Ocorrências (filtros por status, prioridade, pessoas, região, tipo)");
             System.out.println("4 - Módulo 4 / Modo Investigação (integridade dos registros)");
             System.out.println("5 - Módulo 5 / Modo Operação Resgate (ordem e seleção de atendimento)");
             System.out.println("0 - Sair");
