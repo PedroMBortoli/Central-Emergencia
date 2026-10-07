@@ -1,12 +1,13 @@
 package estruturas;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Trie {
 
     //Classe do nó
     private static class No {
-        Map<Character, No> filhos = new HashMap<>();
+        TabelaHash<Character, No> filhos = new TabelaHash<>(16);
         boolean fimDePalavra = false;
         List<Object> valores = new LinkedList<>();
     }
@@ -26,10 +27,10 @@ public class Trie {
         for (int i = 0; i < chaveNormalizada.length(); i++){
             char c = chaveNormalizada.charAt(i);
 
-            No proximo = atual.filhos.get(c);
+            No proximo = atual.filhos.buscar(c);
             if (proximo == null){
                 proximo = new No();
-                atual.filhos.put(c, proximo);
+                atual.filhos.inserir(c, proximo);
             }
 
             atual = proximo;
@@ -44,7 +45,7 @@ public class Trie {
             resultado.addAll(no.valores);
         }
 
-        for(No filho : no.filhos.values()){
+        for(No filho : no.filhos.listarTodos()){
             coletarValores(filho, resultado);
         }
 
@@ -56,7 +57,7 @@ public class Trie {
 
         for(int i = 0; i < prefixoNormalizado.length(); i++){
             char c = prefixoNormalizado.charAt(i);
-            No proximo = atual.filhos.get(c);
+            No proximo = atual.filhos.buscar(c);
 
             //caso do prefixo nao existir na arvore
             if(proximo == null){
@@ -108,11 +109,11 @@ public class Trie {
 
             //esse no so pode sumir do pai se nao representa mais palavra nenhuma e nao tem filhos
             //(se for prefixo de outra palavra maior, ele continua tendo filho e tem que ficar)
-            return !no.fimDePalavra && no.filhos.isEmpty();
+            return !no.fimDePalavra && no.filhos.getTamanho() == 0;
         }
 
         char c = chaveNormalizada.charAt(indice);
-        No proximo = no.filhos.get(c);
+        No proximo = no.filhos.buscar(c);
 
         if (proximo == null){
             return false; //caminho nao existe na arvore - chave nunca foi inserida
@@ -121,11 +122,11 @@ public class Trie {
         boolean filhoFicouVazio = removerRecursivo(proximo, chaveNormalizada, indice + 1, valor, removido);
 
         if (filhoFicouVazio){
-            no.filhos.remove(c);
+            no.filhos.remover(c);
         }
 
         //depois de possivelmente remover o filho, verifica se este no tambem ficou vazio
-        return !no.fimDePalavra && no.filhos.isEmpty();
+        return !no.fimDePalavra && no.filhos.getTamanho() == 0;
     }
 
 }
