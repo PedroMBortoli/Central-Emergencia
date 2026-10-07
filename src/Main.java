@@ -331,22 +331,102 @@ public class Main {
     private static void menuOperacaoResgate() {
         System.out.println();
         System.out.println("--- Operação Resgate: Ordem de Atendimento ---");
-        System.out.println("1 - Ordenar ocorrências pendentes por prioridade");
+        System.out.println("1 - Montar a ordem de atendimento das ocorrências pendentes");
         System.out.println("2 - Selecionar ocorrências pendentes dentro de um limite de tempo");
         System.out.print("Escolha uma opção: ");
 
+        int opcao = lerOpcao();
+        if (opcao != 1 && opcao != 2) {
+            System.out.println("Opção inválida.");
+            return;
+        }
+
+        List<Ocorrencia> candidatas = escolherCandidatas();
+        if (candidatas.isEmpty()) {
+            System.out.println("Nenhuma ocorrência pendente atende às restrições.");
+            return;
+        }
+
+        if (opcao == 1) {
+            ordenarCandidatas(candidatas);
+        } else {
+            selecionarCandidatas(candidatas);
+        }
+    }
+
+    // comeca com as pendentes e vai aplicando as restricoes que o usuario escolher,
+    // uma em cima da outra (assim da pra combinar regiao + tipo + prioridade etc)
+    private static List<Ocorrencia> escolherCandidatas() {
+        List<Ocorrencia> candidatas = central.getOrganizador().filtrarPorStatus("PENDENTE");
+        String restricoes = "";
+
+        while (true) {
+            System.out.println();
+            System.out.println("Candidatas: " + candidatas.size() + " ocorrência(s) pendente(s)"
+                    + (restricoes.isEmpty() ? "" : " |" + restricoes));
+            System.out.println("Adicionar restrição:");
+            System.out.println("1 - Região");
+            System.out.println("2 - Tipo");
+            System.out.println("3 - Prioridade mínima");
+            System.out.println("4 - Quantidade mínima de pessoas envolvidas");
+            System.out.println("0 - Continuar sem mais restrições");
+            System.out.print("Escolha uma opção: ");
+
+            switch (lerOpcao()) {
+                case 1 -> {
+                    String regiao = lerTexto("Região: ").trim().toUpperCase();
+                    candidatas = central.getOrganizador().filtrarPorRegiao(candidatas, regiao);
+                    restricoes += " região " + regiao;
+                }
+                case 2 -> {
+                    String tipo = lerTexto("Tipo (EMS, FIRE ou TRAFFIC): ").trim().toUpperCase();
+                    candidatas = central.getOrganizador().filtrarPorTipo(candidatas, tipo);
+                    restricoes += " tipo " + tipo;
+                }
+                case 3 -> {
+                    int prioridade = lerInteiro("Prioridade mínima (1 a 5): ");
+                    candidatas = central.getOrganizador().filtrarPorPrioridadeMinima(candidatas, prioridade);
+                    restricoes += " prioridade >= " + prioridade;
+                }
+                case 4 -> {
+                    int pessoas = lerInteiro("Quantidade mínima de pessoas: ");
+                    candidatas = central.getOrganizador().filtrarPorPessoasEnvolvidas(candidatas, pessoas);
+                    restricoes += " pessoas >= " + pessoas;
+                }
+                case 0 -> {
+                    return candidatas;
+                }
+                default -> System.out.println("Opção inválida.");
+            }
+        }
+    }
+
+    private static void ordenarCandidatas(List<Ocorrencia> candidatas) {
+        System.out.println("Critério de ordenação:");
+        System.out.println("1 - Prioridade (desempate: mais pessoas, depois menor tempo)");
+        System.out.println("2 - Pessoas envolvidas (desempate: maior prioridade, depois menor tempo)");
+        System.out.println("3 - Menor tempo estimado (desempate: maior prioridade, depois mais pessoas)");
+        System.out.print("Escolha uma opção: ");
+
         switch (lerOpcao()) {
-            case 1 -> {
-                List<Ocorrencia> pendentes = central.getOrganizador().filtrarPorStatus("PENDENTE");
-                imprimirResumo(ordenador.ordenarPorPrioridade(pendentes));
-            }
-            case 2 -> {
-                int limiteTempo = lerInteiro("Tempo disponível (em minutos): ");
-                List<Ocorrencia> pendentes = central.getOrganizador().filtrarPorStatus("PENDENTE");
-                imprimirResumo(ordenador.selecionarComLimiteDeTempo(pendentes, limiteTempo));
-            }
+            case 1 -> imprimirResumo(ordenador.ordenarPorPrioridade(candidatas));
+            case 2 -> imprimirResumo(ordenador.ordenarPorPessoas(candidatas));
+            case 3 -> imprimirResumo(ordenador.ordenarPorTempo(candidatas));
             default -> System.out.println("Opção inválida.");
         }
+    }
+
+    private static void selecionarCandidatas(List<Ocorrencia> candidatas) {
+        int limiteTempo = lerInteiro("Tempo disponível (em minutos): ");
+        List<Ocorrencia> selecionadas = ordenador.selecionarComLimiteDeTempo(candidatas, limiteTempo);
+
+        imprimirResumo(selecionadas);
+
+        int tempoUsado = 0;
+        for (Ocorrencia o : selecionadas) {
+            tempoUsado += o.getTempoEstimado();
+        }
+        System.out.println("Tempo usado: " + tempoUsado + " de " + limiteTempo + " minutos.");
     }
 
     // ===================== AUXILIARES DE ENTRADA E SAÍDA =====================

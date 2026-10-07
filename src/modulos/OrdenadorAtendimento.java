@@ -27,6 +27,41 @@ public class OrdenadorAtendimento {
         return a.getTempoEstimado() - b.getTempoEstimado();
     }
 
+    // outro criterio: quem envolve mais pessoas primeiro; desempata por prioridade e depois tempo
+    public List<Ocorrencia> ordenarPorPessoas(List<Ocorrencia> ocorrencias) {
+        List<Ocorrencia> ordenada = new ArrayList<>(ocorrencias);
+        mergeSort(ordenada, this::compararPorPessoas);
+        return ordenada;
+    }
+
+    private int compararPorPessoas(Ocorrencia a, Ocorrencia b) {
+        if (a.getPessoasEnvolvidas() != b.getPessoasEnvolvidas()) {
+            return b.getPessoasEnvolvidas() - a.getPessoasEnvolvidas();
+        }
+        if (a.getPrioridade() != b.getPrioridade()) {
+            return b.getPrioridade() - a.getPrioridade();
+        }
+        return a.getTempoEstimado() - b.getTempoEstimado();
+    }
+
+    // outro criterio: atendimentos mais rapidos primeiro, pra liberar as equipes antes;
+    // desempata por prioridade e depois pessoas
+    public List<Ocorrencia> ordenarPorTempo(List<Ocorrencia> ocorrencias) {
+        List<Ocorrencia> ordenada = new ArrayList<>(ocorrencias);
+        mergeSort(ordenada, this::compararPorTempo);
+        return ordenada;
+    }
+
+    private int compararPorTempo(Ocorrencia a, Ocorrencia b) {
+        if (a.getTempoEstimado() != b.getTempoEstimado()) {
+            return a.getTempoEstimado() - b.getTempoEstimado();
+        }
+        if (a.getPrioridade() != b.getPrioridade()) {
+            return b.getPrioridade() - a.getPrioridade();
+        }
+        return b.getPessoasEnvolvidas() - a.getPessoasEnvolvidas();
+    }
+
     // ALGORITMO GULOSO: seleciona quais ocorrencias atender dado um limite de tempo
     // (ex: tempo total disponivel das equipes). A cada passo, escolhe a ocorrencia de
     // maior "densidade de impacto" (prioridade x pessoas envolvidas, por unidade de tempo
