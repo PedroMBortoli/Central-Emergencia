@@ -17,7 +17,7 @@ public class Ocorrencia {
 
     //CONSTRUTOR:
 
-    public Ocorrencia(String id, String tipo, String descricao, String regiao, int prioridade, String dataHora, String status, int pessoasEnvolvidas, int tempoEstimado, String hashIntegridade, String endereco, String motivo, String equipe)
+    public Ocorrencia(String id, String tipo, String descricao, String regiao, int prioridade, String dataHora, String status, int pessoasEnvolvidas, int tempoEstimado, String endereco, String motivo, String equipe)
     {
         this.id = id;
         setTipo(tipo);
@@ -28,12 +28,30 @@ public class Ocorrencia {
         setStatus(status);
         setPessoasEnvolvidas(pessoasEnvolvidas);
         setTempoEstimado(tempoEstimado);
-        this.hashIntegridade = hashIntegridade;
         setEndereco(endereco);
         setMotivo(motivo);
         setEquipe(equipe);
+        this.hashIntegridade = calcularHash();
 
+    }
 
+    private String montarConteudo() {
+        return tipo + "|" + motivo + "|" + descricao + "|" + regiao + "|" + endereco + "|" + dataHora;
+    }
+
+    private static long hashPolinomial(String texto, long base) {
+        long h = 0;
+        for (int i = 0; i < texto.length(); i++) {
+            h = base * h + texto.charAt(i);
+        }
+        return h;
+    }
+
+    public String calcularHash() {
+        String conteudo = montarConteudo();
+        long hash31 = hashPolinomial(conteudo, 31);
+        long hash37 = hashPolinomial(conteudo, 37);
+        return String.format("%016x", hash31) + String.format("%016x", hash37);
     }
 
     //METODO PARA IMPRIMIR O OBJETO:
