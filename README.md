@@ -28,9 +28,11 @@ Em sistemas sem o comando `find` (Windows PowerShell), compile listando as pasta
 O programa deve ser executado a partir da raiz do projeto, pois o arquivo de
 dados é lido por caminho relativo (`data/ocorrencias.csv`).
 
-> **Estado atual:** os cinco módulos estão implementados como classes em
-> `src/modulos/`. O menu interativo (`src/Main.java`) dá acesso a eles e aos
-> modos de interação (Investigação, Operação Resgate e Consulta Rápida).
+> **Estado atual:** os módulos 1 a 5 (Trabalho 1) e o módulo 6 (Trabalho 2)
+> estão implementados como classes em `src/modulos/`. O menu interativo
+> (`src/Main.java`) dá acesso a eles e aos modos de interação (Investigação,
+> Operação Resgate e Consulta Rápida). Os módulos 7, 8 e 9 estão em
+> desenvolvimento.
 
 ## Fonte de dados
 
@@ -188,6 +190,21 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
 - **Algoritmo guloso** (`src/modulos/OrdenadorAtendimento.java`): seleção das
   ocorrências a atender dentro de um limite de tempo, no módulo 5 (ver
   [Critérios de decisão](#critérios-de-decisão)).
+- **Grafo direcionado** (`src/estruturas/GrafoDirecionado.java`): planejamento
+  das etapas de atendimento (módulo 6). Cada vértice é uma atividade e cada
+  aresta `A -> B` indica que A precisa ser concluída antes de B.
+  - lista de adjacência: para cada vértice, a lista dos índices dos sucessores;
+  - os nomes das atividades são convertidos em índices por uma `TabelaHash`
+    do grupo, então localizar uma atividade custa O(1) em média;
+  - **ordenação topológica (Kahn):** calcula o grau de entrada de cada
+    vértice, coloca numa fila os de grau zero e, a cada vértice retirado,
+    diminui o grau dos sucessores, enfileirando os que chegam a zero. A fila é
+    um vetor com dois índices (início e fim). Custo O(V + E);
+  - **detecção de ciclos:** se a ordem final tiver menos vértices que o grafo,
+    os que sobraram dependem de um ciclo. Uma busca em profundidade com três
+    cores (não visitado, em visita, concluído), feita só nesses vértices,
+    encontra uma aresta de volta e reconstrói o ciclo pelos pais. Custo
+    O(V + E).
 - **Merge sort** (`src/modulos/OrdenadorAtendimento.java`), estrutura auxiliar:
   ordenação implementada pelo grupo, usada para montar a fila de atendimento e
   para ordenar as candidatas do algoritmo guloso. Divide a lista ao meio
@@ -254,6 +271,26 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
   decide cada uma em O(1), escolhendo sempre a de maior impacto por minuto que
   ainda cabe e nunca revendo a decisão. A solução não é garantidamente ótima,
   mas é rápida e cada escolha pode ser justificada pelo critério.
+
+- **Grafo direcionado com lista de adjacência para as dependências:** o
+  enunciado define cada atividade como vértice e cada dependência como aresta
+  direcionada. A lista de adjacência ocupa O(V + E) e percorre os sucessores
+  de um vértice em tempo proporcional à quantidade deles, que é o que a
+  ordenação topológica precisa. Uma matriz de adjacência ocuparia O(V²) e
+  obrigaria a varrer a linha inteira de cada vértice, sem vantagem para grafos
+  esparsos como estes (cada atividade depende de poucas outras).
+- **Algoritmo de Kahn para a ordenação topológica:** além de gerar uma ordem
+  válida em O(V + E), ele já indica se há ciclo (sobram vértices com grau de
+  entrada maior que zero), sem precisar de uma verificação separada. A ordem
+  também é fácil de explicar: uma atividade entra na sequência assim que todas
+  as que ela depende foram executadas. As atividades que o algoritmo consegue
+  liberar antes do bloqueio são mostradas ao usuário, o que ajuda a ver até
+  onde a operação consegue avançar.
+- **DFS só para mostrar o ciclo:** o Kahn diz que existe ciclo, mas não qual
+  é. A busca em profundidade roda apenas sobre os vértices que sobraram, então
+  só é executada quando há inconsistência, e devolve a sequência exata de
+  atividades que forma o ciclo, para que a dependência errada possa ser
+  corrigida.
 
 ## Funcionalidades
 
@@ -426,6 +463,85 @@ Implementado em `src/modulos/OrdenadorAtendimento.java`.
 
 Os critérios podem ser combinados com os filtros dos módulos 2 e 3: por
 exemplo, ordenar apenas as ocorrências pendentes de uma região.
+
+### Módulo 6 – Planejamento Operacional: Dependências de Atendimento
+
+Implementado em `src/modulos/PlanejamentoOperacional.java`, usando o grafo de
+`src/estruturas/GrafoDirecionado.java`. Acesso pela opção 6 do menu principal;
+a detecção de ciclos também está no Modo Investigação (opção 9).
+
+**Modelagem:** cada operação tem o seu próprio grafo, guardado numa
+`TabelaHash` pelo nome da operação. Vértice = atividade operacional; aresta
+`A -> B` = A precisa ser concluída antes de B poder começar.
+
+**Dados** (`data/dependencias.csv`, colunas `operacao,antes,depois`): 44
+dependências em 4 operações, carregadas na inicialização. Os nomes são
+normalizados para maiúsculas, com espaços trocados por `_`.
+
+| Operação | Atividades | Dependências | Observação |
+|---|---|---|---|
+| `ATENDIMENTO_EMS` | 13 | 13 | etapas de atendimento médico |
+| `ATENDIMENTO_FIRE` | 14 | 15 | etapas de combate a incêndio |
+| `ATENDIMENTO_TRAFFIC` | 11 | 11 | etapas de acidente de trânsito |
+| `TESTE_DEPENDENCIA_CIRCULAR` | 5 | 5 | ciclo proposital, para demonstração |
+
+**Integração com o Trabalho 1:** cada tipo de ocorrência (EMS, FIRE, TRAFFIC)
+corresponde à operação `ATENDIMENTO_<TIPO>`. Informando o id de uma
+ocorrência, o sistema a busca na tabela hash da Central (módulo 1) e mostra a
+sequência de etapas da operação do seu tipo.
+
+**Funcionalidades do menu:**
+
+- listar as operações com o número de atividades e dependências;
+- mostrar as dependências de uma operação;
+- apresentar a ordem de execução de uma operação, ou o ciclo que a impede;
+- apresentar a ordem de execução para uma ocorrência, pelo tipo;
+- cadastrar dependências e atividades (em operações novas ou existentes);
+- remover dependências;
+- verificar ciclos em todas as operações.
+
+Uma dependência de uma atividade para ela mesma, ou repetida, é recusada no
+cadastro.
+
+**Exemplo 1: ordem válida** (`ATENDIMENTO_FIRE`):
+
+    Sequência válida de execução:
+    1. RECEBER_CHAMADA
+    2. CLASSIFICAR_REGIAO
+    3. AVALIAR_RISCO
+    4. DEFINIR_UNIDADE_RESPONSAVEL
+    5. SOLICITAR_APOIO_DEFESA_CIVIL
+    6. DESIGNAR_EQUIPE
+    7. DESLOCAR_VIATURA
+    8. ISOLAR_AREA
+    9. COMBATER_INCENDIO
+    10. EVACUAR_PESSOAS
+    11. RESCALDO
+    12. VISTORIA_FINAL
+    13. LIBERAR_EQUIPE
+    14. ENCERRAR_OPERACAO
+
+**Exemplo 2: dependência circular** (`TESTE_DEPENDENCIA_CIRCULAR`):
+
+    Não é possível determinar uma ordem válida para todas as atividades.
+    Ciclo encontrado: DESIGNAR_EQUIPE -> LIBERAR_RECURSO -> CONCLUIR_ETAPA -> DESIGNAR_EQUIPE
+    Atividades bloqueadas pelo ciclo: DESIGNAR_EQUIPE, LIBERAR_RECURSO, CONCLUIR_ETAPA, ENCERRAR_OPERACAO
+    Atividades que podem ser executadas antes do bloqueio: RECEBER_CHAMADA
+
+Removendo a dependência `CONCLUIR_ETAPA -> DESIGNAR_EQUIPE` pelo menu, o ciclo
+desaparece e a mesma consulta passa a devolver uma ordem válida de 5 etapas.
+
+**Exemplo 3: ciclo cadastrado pelo usuário:** cadastrando `A -> B` e depois
+`B -> A` numa operação nova, a consulta informa o ciclo `A -> B -> A`.
+
+**Complexidade** (V = atividades, E = dependências):
+
+| Operação | Custo |
+|---|---|
+| Cadastrar dependência | O(1) em média para achar os vértices, mais O(grau de saída) para evitar aresta repetida |
+| Ordenação topológica (Kahn) | O(V + E) |
+| Encontrar o ciclo (DFS) | O(V + E), executada só quando há ciclo |
+| Verificar ciclos em todas as operações | soma de O(V + E) de cada operação |
 
 ## Critérios de decisão
 
