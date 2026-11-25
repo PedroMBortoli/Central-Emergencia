@@ -3,6 +3,8 @@ import modulos.CentralOcorrencias;
 import modulos.ComparacaoArquivo;
 import modulos.Integridade;
 import modulos.OrdenadorAtendimento;
+import modulos.PlanejamentoOperacional;
+import estruturas.GrafoDirecionado;
 
 import java.util.List;
 import java.util.Scanner;
@@ -11,9 +13,11 @@ public class Main {
 
     private static final String ARQUIVO_DADOS = "data/ocorrencias.csv";
     private static final String ARQUIVO_TESTE_INTEGRIDADE = "data/ocorrencias_teste_integridade.csv";
+    private static final String ARQUIVO_DEPENDENCIAS = "data/dependencias.csv";
 
     private static final Scanner scanner = new Scanner(System.in);
     private static final OrdenadorAtendimento ordenador = new OrdenadorAtendimento();
+    private static final PlanejamentoOperacional planejamento = new PlanejamentoOperacional();
 
     private static CentralOcorrencias central;
     private static Integridade integridade;
@@ -28,6 +32,9 @@ public class Main {
             return;
         }
 
+        int dependencias = planejamento.carregarDependencias(ARQUIVO_DEPENDENCIAS);
+        System.out.println(dependencias + " dependências carregadas de " + ARQUIVO_DEPENDENCIAS + ".");
+
         boolean sair = false;
         while (!sair) {
             System.out.println();
@@ -37,6 +44,7 @@ public class Main {
             System.out.println("3 - Módulo 3 / Organização das Ocorrências (filtros por status, prioridade, pessoas, região, tipo)");
             System.out.println("4 - Módulo 4 / Modo Investigação (integridade dos registros)");
             System.out.println("5 - Módulo 5 / Modo Operação Resgate (ordem e seleção de atendimento)");
+            System.out.println("6 - Módulo 6 / Planejamento Operacional (dependências entre atividades)");
             System.out.println("0 - Sair");
             System.out.print("Escolha uma opção: ");
 
@@ -46,6 +54,7 @@ public class Main {
                 case 3 -> menuOrganizador();
                 case 4 -> menuIntegridade();
                 case 5 -> menuOperacaoResgate();
+                case 6 -> menuPlanejamentoOperacional();
                 case 0 -> sair = true;
                 default -> System.out.println("Opção inválida.");
             }
@@ -218,6 +227,7 @@ public class Main {
         System.out.println("6 - Comparar com o arquivo carregado (" + arquivoCarregado + ")");
         System.out.println("7 - Simular adulteração de um registro (demonstração)");
         System.out.println("8 - Carregar outra base de dados");
+        System.out.println("9 - Detectar ciclos no planejamento de atividades");
         System.out.print("Escolha uma opção: ");
 
         switch (lerOpcao()) {
@@ -234,6 +244,7 @@ public class Main {
             case 6 -> compararComArquivoCarregado();
             case 7 -> simularAdulteracao();
             case 8 -> trocarBase();
+            case 9 -> detectarCiclos();
             default -> System.out.println("Opção inválida.");
         }
     }
@@ -427,6 +438,127 @@ public class Main {
             tempoUsado += o.getTempoEstimado();
         }
         System.out.println("Tempo usado: " + tempoUsado + " de " + limiteTempo + " minutos.");
+    }
+
+    // ===================== MÓDULO 6 / PLANEJAMENTO OPERACIONAL =====================
+
+    private static void menuPlanejamentoOperacional() {
+        System.out.println();
+        System.out.println("--- Planejamento Operacional: Dependências de Atendimento ---");
+        System.out.println("1 - Listar operações cadastradas");
+        System.out.println("2 - Mostrar dependências de uma operação");
+        System.out.println("3 - Ordem de execução de uma operação");
+        System.out.println("4 - Ordem de execução para uma ocorrência (pelo tipo)");
+        System.out.println("5 - Cadastrar dependência");
+        System.out.println("6 - Cadastrar atividade sem dependências");
+        System.out.println("7 - Remover dependência");
+        System.out.println("8 - Verificar ciclos em todas as operações");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> listarOperacoes();
+            case 2 -> mostrarDependencias(lerTexto("Operação: "));
+            case 3 -> mostrarOrdem(lerTexto("Operação: "));
+            case 4 -> ordemParaOcorrencia();
+            case 5 -> {
+                String operacao = lerTexto("Operação (nova ou existente): ");
+                String antes = lerTexto("Atividade que deve ser concluída antes: ");
+                String depois = lerTexto("Atividade que depende dela: ");
+                boolean ok = planejamento.cadastrarDependencia(operacao, antes, depois);
+                System.out.println(ok ? "Dependência cadastrada." : "Dependência inválida ou já existente.");
+            }
+            case 6 -> {
+                String operacao = lerTexto("Operação (nova ou existente): ");
+                String atividade = lerTexto("Atividade: ");
+                boolean ok = planejamento.cadastrarAtividade(operacao, atividade);
+                System.out.println(ok ? "Atividade cadastrada." : "Atividade inválida ou já existente.");
+            }
+            case 7 -> {
+                String operacao = lerTexto("Operação: ");
+                String antes = lerTexto("Atividade de origem: ");
+                String depois = lerTexto("Atividade dependente: ");
+                boolean ok = planejamento.removerDependencia(operacao, antes, depois);
+                System.out.println(ok ? "Dependência removida." : "Dependência não encontrada.");
+            }
+            case 8 -> detectarCiclos();
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private static void listarOperacoes() {
+        List<String> nomes = planejamento.getNomesOperacoes();
+        if (nomes.isEmpty()) {
+            System.out.println("Nenhuma operação cadastrada.");
+            return;
+        }
+        for (String nome : nomes) {
+            GrafoDirecionado grafo = planejamento.buscarOperacao(nome);
+            System.out.println(nome + " | " + grafo.getQuantidadeVertices() + " atividades | "
+                    + grafo.getQuantidadeArestas() + " dependências");
+        }
+    }
+
+    private static void mostrarDependencias(String operacao) {
+        GrafoDirecionado grafo = planejamento.buscarOperacao(operacao);
+        if (grafo == null) {
+            System.out.println("Operação não encontrada.");
+            return;
+        }
+        for (String atividade : grafo.getVertices()) {
+            List<String> sucessores = grafo.getSucessores(atividade);
+            System.out.println(atividade + (sucessores.isEmpty() ? "" : " -> " + String.join(", ", sucessores)));
+        }
+    }
+
+    private static void mostrarOrdem(String operacao) {
+        GrafoDirecionado.ResultadoOrdenacao resultado = planejamento.ordemDeExecucao(operacao);
+        if (resultado == null) {
+            System.out.println("Operação não encontrada.");
+            return;
+        }
+
+        if (!resultado.temCiclo()) {
+            System.out.println("Sequência válida de execução:");
+            List<String> ordem = resultado.getOrdem();
+            for (int i = 0; i < ordem.size(); i++) {
+                System.out.println((i + 1) + ". " + ordem.get(i));
+            }
+            return;
+        }
+
+        System.out.println("Não é possível determinar uma ordem válida para todas as atividades.");
+        System.out.println("Ciclo encontrado: " + String.join(" -> ", resultado.getCiclo()));
+        System.out.println("Atividades bloqueadas pelo ciclo: " + String.join(", ", resultado.getBloqueadas()));
+        if (!resultado.getOrdem().isEmpty()) {
+            System.out.println("Atividades que podem ser executadas antes do bloqueio: "
+                    + String.join(", ", resultado.getOrdem()));
+        }
+    }
+
+    private static void ordemParaOcorrencia() {
+        int id = lerInteiro("Id da ocorrência: ");
+        Ocorrencia o = central.consultar(id);
+        if (o == null) {
+            System.out.println("Ocorrência não encontrada.");
+            return;
+        }
+        String operacao = planejamento.operacaoDoTipo(o.getTipo());
+        System.out.println("Ocorrência " + id + " | " + o.getTipo() + " | " + o.getMotivo() + " | " + o.getRegiao());
+        System.out.println("Operação utilizada: " + operacao);
+        mostrarOrdem(operacao);
+    }
+
+    private static void detectarCiclos() {
+        List<String> comCiclo = planejamento.operacoesComCiclo();
+        if (comCiclo.isEmpty()) {
+            System.out.println("Nenhum ciclo encontrado. Todas as operações possuem ordem válida.");
+            return;
+        }
+        System.out.println(comCiclo.size() + " operação(ões) com dependências circulares:");
+        for (String nome : comCiclo) {
+            GrafoDirecionado.ResultadoOrdenacao resultado = planejamento.ordemDeExecucao(nome);
+            System.out.println(nome + ": " + String.join(" -> ", resultado.getCiclo()));
+        }
     }
 
     // ===================== AUXILIARES DE ENTRADA E SAÍDA =====================
