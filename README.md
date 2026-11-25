@@ -28,11 +28,10 @@ Em sistemas sem o comando `find` (Windows PowerShell), compile listando as pasta
 O programa deve ser executado a partir da raiz do projeto, pois o arquivo de
 dados é lido por caminho relativo (`data/ocorrencias.csv`).
 
-> **Estado atual:** os módulos 1 a 5 (Trabalho 1) e os módulos 6, 7 e 9
+> **Estado atual:** os módulos 1 a 5 (Trabalho 1) e os módulos 6 a 9
 > (Trabalho 2) estão implementados em `src/modulos/`. O menu (`src/Main.java`)
 > é organizado pelos quatro modos de interação (ver
-> [Modos de interação](#modos-de-interação)). O módulo 8 está em
-> desenvolvimento.
+> [Modos de interação](#modos-de-interação)).
 
 ## Fonte de dados
 
@@ -208,11 +207,28 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
 - **Programação dinâmica** (`src/modulos/OtimizacaoRecursos.java`): seleção
   ótima de ocorrências dentro de um tempo disponível (módulo 7), como o problema
   da mochila 0/1. Usa uma matriz `dp[n+1][capacidade+1]` de inteiros.
-- **Merge sort** (`src/modulos/OrdenadorAtendimento.java`), estrutura auxiliar:
-  ordenação implementada pelo grupo, usada para montar a fila de atendimento e
-  para ordenar as candidatas do algoritmo guloso. Divide a lista ao meio
-  recursivamente e intercala as metades ordenadas; em caso de empate, o
-  elemento da metade esquerda vem primeiro, o que torna a ordenação estável.
+- **Grafo ponderado** (`src/estruturas/GrafoPonderado.java`): rede de bases,
+  hospitais, postos de apoio e regiões (módulo 8). Mesmo esquema do
+  `GrafoDirecionado`, mas não direcionado (cada aresta aparece nas duas
+  listas de adjacência) e com custo: cada vértice é um ponto da rede e cada
+  aresta `A - B` tem um custo (tempo/distância) de deslocamento entre eles.
+- **Heap mínimo** (`src/estruturas/HeapMinimo.java`): fila de prioridade
+  implementada do zero (sem `java.util.PriorityQueue`), usada pelo Dijkstra do
+  módulo 8 para sempre processar o ponto de menor distância conhecida.
+  Vetor binário com `subir`/`descer` por comparação de distância; usa deleção
+  preguiçosa (o mesmo ponto pode ser inserido mais de uma vez, com distâncias
+  diferentes; uma entrada desatualizada é só ignorada quando sai do heap).
+- **Union-Find** (`src/estruturas/UnionFind.java`): conjuntos disjuntos
+  implementados do zero (vetor `pai[]`), usado pelo Kruskal do módulo 8 para
+  detectar se uma aresta fecha ciclo. `find` com compressão de caminho e
+  `union` por tamanho, para manter as árvores do union-find rasas.
+- **Merge sort** (`src/modulos/OrdenadorAtendimento.java`), estrutura auxiliar
+  e genérica: ordenação implementada pelo grupo, usada para montar a fila de
+  atendimento e ordenar as candidatas do algoritmo guloso (módulo 5), os
+  grupos do resumo da seleção (módulo 9) e as arestas do Kruskal (módulo 8).
+  Divide a lista ao meio recursivamente e intercala as metades ordenadas; em
+  caso de empate, o elemento da metade esquerda vem primeiro, o que torna a
+  ordenação estável.
 
 ## Justificativas das escolhas
 
@@ -307,6 +323,39 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
   índice da tabela. O limite de 1440 min (um dia) evita uma tabela grande
   demais: com 5000 ocorrências são cerca de 7,2 milhões de inteiros (~29 MB).
 
+- **Dijkstra para o caminho mínimo:** a rede logística tem custos positivos
+  (tempo/distância nunca é negativo), que é exatamente a condição em que
+  Dijkstra garante o caminho ótimo. Uma busca em largura ignoraria os custos
+  (trataria cada aresta como custo 1); testar todos os caminhos seria
+  exponencial. O heap mínimo implementado pelo grupo garante que o próximo
+  ponto processado é sempre o de menor distância conhecida, sem precisar
+  varrer todos os pontos a cada passo.
+- **Deleção preguiçosa no heap em vez de diminuir-chave:** uma fila de
+  prioridade "de livro" apagaria a entrada antiga de um ponto ao achar uma
+  distância melhor para ele (diminuir-chave), o que exige saber a posição de
+  cada item dentro do heap. O grupo optou por simplesmente inserir uma nova
+  entrada e ignorar a antiga quando ela for retirada (sua distância já estará
+  superada) — mais simples de implementar corretamente à mão, ao custo de o
+  heap guardar algumas entradas a mais. Como cada aresta gera no máximo uma
+  reinserção, o heap nunca passa de O(E) itens, e o custo total fica
+  O((V + E) log E), que é O((V + E) log V) pois E ≤ V².
+- **Kruskal para a árvore geradora mínima:** assim como o guloso do módulo 5,
+  o Kruskal é um algoritmo guloso — ordena as arestas por custo uma única vez
+  e decide cada uma em sequência, sem reconsiderar depois — mas aqui a
+  escolha gulosa é **comprovadamente ótima** para esse problema (uma aresta
+  mínima que não fecha ciclo sempre pode fazer parte de alguma árvore
+  geradora mínima). Prim seria outra opção válida, mas exigiria o mesmo tipo
+  de heap do Dijkstra para o mesmo ganho; o Kruskal reaproveita o merge sort
+  que o grupo já tinha, então foi o mais direto de implementar sem duplicar
+  estrutura.
+- **Union-Find para detectar ciclo no Kruskal:** verificar se dois pontos já
+  estão conectados percorrendo o grafo custaria O(V + E) a cada aresta
+  candidata, ou seja, O(E · (V + E)) no total. Com união por tamanho e
+  compressão de caminho, cada chamada de `find`/`union` custa praticamente
+  O(1) (mais precisamente O(α(V)), uma função que cresce tão devagar que é
+  menor que 5 para qualquer quantidade de pontos usada na prática), então o
+  custo todo fica dominado pela ordenação das arestas, O(E log E).
+
 ## Modos de interação
 
 O menu principal tem os quatro modos pedidos no enunciado. Cada modo só reúne
@@ -317,7 +366,7 @@ os menus dos módulos que já existiam, sem reimplementar nada.
 | 1 | Consulta Rápida | Central de Ocorrências (módulo 1), busca rápida (módulo 2) e filtros (módulo 3) |
 | 2 | Investigação | integridade dos registros (módulo 4), dependências entre atividades (módulo 6) e detecção de ciclos |
 | 3 | Planejamento Estratégico | ordem e seleção gulosa (módulo 5), seleção por programação dinâmica (módulo 7), comparação de cenários e resumo da seleção (módulo 9) |
-| 4 | Logística | rede de emergências (módulo 8, em desenvolvimento) |
+| 4 | Logística | caminho mínimo, árvore geradora mínima, conexões de um ponto e lista de pontos da rede de emergências (módulo 8) |
 
 ## Funcionalidades
 
@@ -676,7 +725,9 @@ isso.
 
 **Integração:** usa a `TabelaHash` do Trabalho 1 para agrupar (chave = região
 ou tipo) e recebe a lista gerada pelos módulos 5 ou 7. A ordenação dos grupos
-é um insertion sort simples, já que são poucos grupos.
+reaproveita o merge sort do módulo 5 (`OrdenadorAtendimento.mergeSort`, que
+passou a ser genérico para que outros módulos, como este e o Kruskal do
+módulo 8, pudessem reaproveitá-lo).
 
 **Exemplo** (depois do exemplo 1 do módulo 7):
 
@@ -693,7 +744,103 @@ ou tipo) e recebe a lista gerada pelos módulos 5 ou 7. A ordenação dos grupos
     Região que mais recebe equipes: CHELTENHAM
 
 **Complexidade:** O(s) para agrupar as `s` selecionadas (O(1) em média por
-inserção na tabela hash) mais O(g²) para ordenar os `g` grupos.
+inserção na tabela hash) mais O(g log g) para ordenar os `g` grupos com o
+merge sort.
+
+### Módulo 8 – Rede de Emergências: O Desafio Logístico
+
+Implementado em `src/modulos/RedeEmergencias.java`, usando o grafo de
+`src/estruturas/GrafoPonderado.java`. Acesso pelo Modo Logística.
+
+**Por que caminho mínimo e árvore geradora mínima:** a central precisa de duas
+respostas diferentes sobre a mesma rede de deslocamento. "Qual o caminho mais
+rápido de uma base até esta ocorrência?" é caminho mínimo; "qual o conjunto de
+ligações mais barato para manter todos os pontos da rede alcançáveis, por
+exemplo para planejar manutenção de vias ou reforço de rede de comunicação
+entre bases?" é árvore geradora mínima. As duas trabalham sobre o mesmo grafo
+não direcionado e ponderado, o que evita manter duas representações da rede
+(diferente de fluxo máximo, por exemplo, que exigiria um grafo direcionado e
+com capacidade, não só custo).
+
+**Como o grafo foi montado** (`data/rede.csv`, colunas `origem,destino,custo`):
+32 vértices e 59 arestas.
+
+- **vértices:** bases de resposta inventadas (`BASE_CENTRAL`, `BASE_NORTE`,
+  `BASE_SUL`), hospitais e um quartel/postos de apoio inventados a partir dos
+  nomes de região do dataset (`HOSPITAL_NORRISTOWN`, `QUARTEL_CONSHOHOCKEN`,
+  `POSTO_HORSHAM`, ...), e as 20 regiões de maior frequência em
+  `data/ocorrencias.csv` (`NORRISTOWN`, `LOWER MERION`, `CHELTENHAM`, ...) —
+  usando o nome exatamente como aparece no campo `regiao` da ocorrência, para
+  que o módulo 8 consiga usar a região de uma ocorrência como destino do
+  Dijkstra sem nenhuma tradução (ver integração mais abaixo);
+- **arestas:** uma ligação viária/operacional entre dois pontos, no formato
+  `origem,destino,custo`;
+- **custo:** tempo estimado de deslocamento em minutos entre os dois pontos
+  (inventado, mas em faixas plausíveis: 3 a 14 min entre pontos vizinhos);
+- **ponto isolado:** a última linha do arquivo (`POSTO_ISOLADO,,`) cadastra um
+  vértice sem nenhuma aresta — uma linha com o campo `destino` vazio é tratada
+  como "só declarar o vértice", sem ligação — para demonstrar o caso "não
+  existe caminho" e uma árvore geradora que vira floresta.
+
+**Caminho mínimo (Dijkstra):** `RedeEmergencias.caminhoMinimo(origem, destino)`
+devolve a sequência de pontos e o custo total, usando um heap mínimo
+implementado do zero (`HeapMinimo`, ver
+[Estruturas implementadas](#estruturas-implementadas-e-onde-foram-aplicadas))
+e um vetor `anterior[]` para reconstruir o caminho a partir do destino.
+
+- se origem ou destino não existir na rede, devolve `null` e o menu avisa que
+  o ponto não foi encontrado;
+- se não existir caminho entre os dois (por exemplo, até o `POSTO_ISOLADO`),
+  devolve um resultado sem caminho e custo `-1`, e o menu avisa que não existe
+  ligação;
+- se origem for igual a destino, o caminho é só o próprio ponto e o custo é 0.
+
+**Exemplo 1** (caminho normal): `BASE_NORTE` até `POTTSTOWN`:
+
+    Caminho: BASE_NORTE -> UPPER DUBLIN -> PLYMOUTH -> LOWER PROVIDENCE -> SPRINGFIELD -> POTTSTOWN
+    Custo total: 43
+
+**Exemplo 2** (origem igual a destino): `NORRISTOWN` até `NORRISTOWN`:
+
+    Caminho: NORRISTOWN
+    Custo total: 0
+
+**Exemplo 3** (sem caminho): `BASE_CENTRAL` até `POSTO_ISOLADO`:
+
+    Não existe caminho entre BASE_CENTRAL e POSTO_ISOLADO na rede atual.
+
+**Árvore geradora mínima (Kruskal):** `RedeEmergencias.arvoreGeradoraMinima()`
+ordena as 59 arestas pelo custo (merge sort do módulo 5) e vai escolhendo a
+mais barata que não fecha ciclo, usando um `UnionFind` implementado do zero
+para checar isso em tempo quase constante.
+
+**Exemplo 4** (com os 32 pontos e o `POSTO_ISOLADO` sem nenhuma aresta):
+
+    Conexões escolhidas (30):
+    ...
+    Custo total: 177
+    A rede não é conexa: o resultado é uma floresta com 2 componentes, não uma única árvore.
+
+Com 32 vértices e 2 componentes (o `POSTO_ISOLADO` sozinho e todo o resto
+conectado), a árvore geradora mínima do componente principal tem
+`32 - 2 = 30` arestas, exatamente o `V - componentes` esperado para uma
+floresta geradora mínima (seria `V - 1` se a rede fosse conexa).
+
+**Integração com o Trabalho 1** (opção 5 do Modo Logística): recebe o id de
+uma ocorrência, consulta a `Ocorrencia` pela `CentralOcorrencias` do módulo 1 e
+usa a própria região dela (`o.getRegiao()`) como destino do Dijkstra a partir
+de um ponto de partida informado pelo usuário — por isso os nomes dos vértices
+de região no `rede.csv` são exatamente os mesmos valores do campo `regiao` das
+ocorrências.
+
+**Complexidade:**
+
+| Algoritmo | Custo |
+|---|---|
+| Dijkstra (heap com deleção preguiçosa) | O((V + E) log V) |
+| Kruskal (merge sort das arestas + union-find) | O(E log E) |
+
+Com 32 vértices e 59 arestas, as duas operações rodam em milissegundos.
 
 ## Integração entre o Trabalho 1 e o Trabalho 2
 
@@ -706,6 +853,10 @@ inserção na tabela hash) mais O(g²) para ordenar os `g` grupos.
   `RegraPessoas`). Ele é comparado com o guloso do módulo 5.
 - O módulo 9 agrupa com a `TabelaHash` do T1 e resume o que os módulos 5 e 7
   selecionaram.
+- O módulo 8 reaproveita o merge sort do módulo 5 para o Kruskal e, na opção
+  "caminho até uma ocorrência", consulta a `Ocorrencia` pelo id na
+  `CentralOcorrencias` do módulo 1 e usa a região dela como destino do
+  Dijkstra.
 - Os menus antigos continuam iguais e foram só reunidos nos modos de interação.
 
 ## Critérios de decisão
