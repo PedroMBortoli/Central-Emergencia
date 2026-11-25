@@ -72,12 +72,7 @@ public class ConsultaRapida {
     // insere o id na lista de ids da categoria (tipo/regiao), criando a lista
     // se ainda nao existir uma para aquela chave
     private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
-        List<String> lista = indice.buscar(normalizar(chave));
-        if (lista == null) {
-            lista = new ArrayList<>();
-            indice.inserir(normalizar(chave), lista);
-        }
-        lista.add(id);
+        indice.buscarOuInserir(normalizar(chave), ArrayList::new).add(id);
     }
 
     // tira o id da lista de uma categoria (tipo/regiao); se a lista ficar vazia,

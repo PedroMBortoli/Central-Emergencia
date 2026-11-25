@@ -3,7 +3,9 @@ import modulos.CentralOcorrencias;
 import modulos.ComparacaoArquivo;
 import modulos.Integridade;
 import modulos.OrdenadorAtendimento;
+import modulos.OtimizacaoRecursos;
 import modulos.PlanejamentoOperacional;
+import modulos.ResumoSelecao;
 import estruturas.GrafoDirecionado;
 
 import java.util.List;
@@ -18,6 +20,11 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final OrdenadorAtendimento ordenador = new OrdenadorAtendimento();
     private static final PlanejamentoOperacional planejamento = new PlanejamentoOperacional();
+    private static final OtimizacaoRecursos otimizacao = new OtimizacaoRecursos();
+    private static final ResumoSelecao resumo = new ResumoSelecao();
+
+    // ultima lista de ocorrencias escolhidas no planejamento (usada no resumo do modulo 9)
+    private static List<Ocorrencia> ultimaSelecao;
 
     private static CentralOcorrencias central;
     private static Integridade integridade;
@@ -39,28 +46,83 @@ public class Main {
         while (!sair) {
             System.out.println();
             System.out.println("===== MENU PRINCIPAL =====");
-            System.out.println("1 - Módulo 1 / Central de Ocorrências (cadastro, consulta, alteração, remoção, listagem)");
-            System.out.println("2 - Módulo 2 / Modo Consulta Rápida (busca por id, descrição, tipo, região, prefixo)");
-            System.out.println("3 - Módulo 3 / Organização das Ocorrências (filtros por status, prioridade, pessoas, região, tipo)");
-            System.out.println("4 - Módulo 4 / Modo Investigação (integridade dos registros)");
-            System.out.println("5 - Módulo 5 / Modo Operação Resgate (ordem e seleção de atendimento)");
-            System.out.println("6 - Módulo 6 / Planejamento Operacional (dependências entre atividades)");
+            System.out.println("1 - Modo Consulta Rápida (módulos 1, 2 e 3)");
+            System.out.println("2 - Modo Investigação (módulos 4 e 6)");
+            System.out.println("3 - Modo Planejamento Estratégico (módulos 5, 7 e 9)");
+            System.out.println("4 - Modo Logística (módulo 8)");
             System.out.println("0 - Sair");
             System.out.print("Escolha uma opção: ");
 
             switch (lerOpcao()) {
-                case 1 -> menuCentralOcorrencias();
-                case 2 -> menuConsultaRapida();
-                case 3 -> menuOrganizador();
-                case 4 -> menuIntegridade();
-                case 5 -> menuOperacaoResgate();
-                case 6 -> menuPlanejamentoOperacional();
+                case 1 -> modoConsultaRapida();
+                case 2 -> modoInvestigacao();
+                case 3 -> modoPlanejamentoEstrategico();
+                case 4 -> modoLogistica();
                 case 0 -> sair = true;
                 default -> System.out.println("Opção inválida.");
             }
         }
 
         System.out.println("Encerrando o sistema.");
+    }
+
+    // ===================== MODOS DE INTERAÇÃO =====================
+    // cada modo so junta os menus dos modulos que tem a mesma finalidade
+
+    private static void modoConsultaRapida() {
+        System.out.println();
+        System.out.println("=== Modo Consulta Rápida ===");
+        System.out.println("1 - Central de Ocorrências (cadastro, consulta, alteração, remoção, listagem)");
+        System.out.println("2 - Busca rápida (id, prefixo da descrição, tipo, região)");
+        System.out.println("3 - Filtros (status, prioridade, pessoas, região, tipo)");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> menuCentralOcorrencias();
+            case 2 -> menuConsultaRapida();
+            case 3 -> menuOrganizador();
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private static void modoInvestigacao() {
+        System.out.println();
+        System.out.println("=== Modo Investigação ===");
+        System.out.println("1 - Integridade dos registros");
+        System.out.println("2 - Dependências entre atividades (planejamento operacional)");
+        System.out.println("3 - Detectar ciclos no planejamento de atividades");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> menuIntegridade();
+            case 2 -> menuPlanejamentoOperacional();
+            case 3 -> detectarCiclos();
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private static void modoPlanejamentoEstrategico() {
+        System.out.println();
+        System.out.println("=== Modo Planejamento Estratégico ===");
+        System.out.println("1 - Ordem de atendimento e seleção gulosa (módulo 5)");
+        System.out.println("2 - Selecionar ocorrências com programação dinâmica (módulo 7)");
+        System.out.println("3 - Comparar cenários de atendimento");
+        System.out.println("4 - Resumo e recursos da última seleção (módulo 9)");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> menuOperacaoResgate();
+            case 2 -> otimizarSelecao();
+            case 3 -> compararCenarios();
+            case 4 -> mostrarResumoSelecao();
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private static void modoLogistica() {
+        System.out.println();
+        System.out.println("=== Modo Logística ===");
+        System.out.println("Módulo 8 (rede de emergências) ainda em desenvolvimento.");
     }
 
     // ===================== MÓDULO 1 — CENTRAL DE OCORRÊNCIAS =====================
@@ -334,6 +396,8 @@ public class Main {
         central = nova;
         integridade = new Integridade(central);
         arquivoCarregado = caminho;
+        // a selecao anterior era da base antiga, entao o resumo (modulo 9) nao vale mais
+        ultimaSelecao = null;
         System.out.println(carregadas + " ocorrências carregadas de " + caminho + ".");
     }
 
@@ -438,6 +502,185 @@ public class Main {
             tempoUsado += o.getTempoEstimado();
         }
         System.out.println("Tempo usado: " + tempoUsado + " de " + limiteTempo + " minutos.");
+
+        // guarda pra poder ver o resumo depois (modulo 9)
+        ultimaSelecao = selecionadas;
+    }
+
+    // ===================== MÓDULO 7 / OTIMIZAÇÃO DE RECURSOS =====================
+
+    // candidatas + tempo disponivel: a entrada comum da otimizacao e da comparacao de cenarios
+    private record Cenario(List<Ocorrencia> candidatas, int capacidade) {
+    }
+
+    // monta as candidatas com as restricoes e le o tempo disponivel;
+    // devolve null se nenhuma ocorrencia sobrou depois das restricoes
+    private static Cenario prepararCenario() {
+        List<Ocorrencia> candidatas = escolherCandidatas();
+        if (candidatas.isEmpty()) {
+            System.out.println("Nenhuma ocorrência pendente atende às restrições.");
+            return null;
+        }
+        return new Cenario(candidatas, lerCapacidade());
+    }
+
+    private static void otimizarSelecao() {
+        Cenario c = prepararCenario();
+        if (c == null) {
+            return;
+        }
+        int criterio = lerCriterio();
+
+        OtimizacaoRecursos.Resultado r = otimizacao.selecionar(c.candidatas(), c.capacidade(), criterio);
+        ultimaSelecao = r.getSelecionadas();
+        mostrarResultado(r, c.candidatas());
+    }
+
+    private static int lerCapacidade() {
+        while (true) {
+            int c = lerInteiro("Tempo disponível em minutos (1 a " + OtimizacaoRecursos.CAPACIDADE_MAXIMA + "): ");
+            if (c >= 1 && c <= OtimizacaoRecursos.CAPACIDADE_MAXIMA) {
+                return c;
+            }
+            System.out.println("Valor fora do limite.");
+        }
+    }
+
+    private static int lerCriterio() {
+        while (true) {
+            System.out.println("O que maximizar?");
+            System.out.println("1 - Prioridade total");
+            System.out.println("2 - Quantidade de pessoas atendidas");
+            System.out.print("Escolha uma opção: ");
+            switch (lerOpcao()) {
+                case 1 -> {
+                    return OtimizacaoRecursos.CRITERIO_PRIORIDADE;
+                }
+                case 2 -> {
+                    return OtimizacaoRecursos.CRITERIO_PESSOAS;
+                }
+                default -> System.out.println("Opção inválida.");
+            }
+        }
+    }
+
+    private static void mostrarResultado(OtimizacaoRecursos.Resultado r, List<Ocorrencia> candidatas) {
+        int criterio = r.getCriterio();
+        String nome = OtimizacaoRecursos.nomeCriterio(criterio);
+
+        System.out.println();
+        System.out.println("SELECIONADAS (" + r.getSelecionadas().size() + "):");
+        for (Ocorrencia o : r.getSelecionadas()) {
+            System.out.println("Id " + o.getId() + " | " + o.getTipo() + " | " + o.getMotivo() + " | " + o.getRegiao()
+                    + " | " + o.getTempoEstimado() + " min | " + nome + " " + OtimizacaoRecursos.beneficio(o, criterio));
+        }
+        System.out.println("Tempo usado: " + r.getTempoUsado() + " de " + r.getCapacidade() + " minutos.");
+        System.out.println("Total de " + nome + ": " + r.getBeneficioTotal());
+
+        System.out.println();
+        System.out.println("Ficaram de fora: " + r.getDeFora().size() + " ocorrência(s).");
+        if (!r.getDeFora().isEmpty()
+                && lerTexto("Listar as que ficaram de fora? (s/n): ").trim().equalsIgnoreCase("s")) {
+            for (Ocorrencia o : r.getDeFora()) {
+                String motivo;
+                if (o.getTempoEstimado() > r.getCapacidade()) {
+                    motivo = "sozinha já passa do tempo disponível";
+                } else if (OtimizacaoRecursos.beneficio(o, criterio) == 0) {
+                    motivo = "não soma nada nesse critério";
+                } else {
+                    motivo = "cabe, mas a combinação escolhida rende mais";
+                }
+                System.out.println("Id " + o.getId() + " | " + o.getMotivo() + " | " + o.getTempoEstimado() + " min | "
+                        + nome + " " + OtimizacaoRecursos.beneficio(o, criterio) + " | " + motivo);
+            }
+        }
+
+        // compara com o guloso do modulo 5 usando o mesmo tempo
+        List<Ocorrencia> gulosa = ordenador.selecionarComLimiteDeTempo(candidatas, r.getCapacidade());
+        int totalGuloso = OtimizacaoRecursos.beneficioTotal(gulosa, criterio);
+
+        System.out.println();
+        System.out.println("Justificativa:");
+        System.out.println("- Cada ocorrência é uma decisão: entra inteira na seleção ou fica de fora.");
+        System.out.println("- dp[i][t] guarda o maior total de " + nome + " usando as i primeiras ocorrências com t minutos.");
+        System.out.println("- Tabela de " + (candidatas.size() + 1) + " x " + (r.getCapacidade() + 1)
+                + " posições; a resposta ótima é dp[" + candidatas.size() + "][" + r.getCapacidade() + "] = "
+                + r.getBeneficioTotal() + ".");
+        System.out.println("- O guloso do módulo 5, com o mesmo tempo, chega a " + totalGuloso + " de " + nome + ".");
+        System.out.println("Obs.: é uma simulação para planejamento, não substitui os protocolos oficiais de atendimento.");
+    }
+
+    // roda o mesmo conjunto de candidatas em 3 estrategias e mostra lado a lado
+    private static void compararCenarios() {
+        Cenario c = prepararCenario();
+        if (c == null) {
+            return;
+        }
+        List<Ocorrencia> candidatas = c.candidatas();
+        int capacidade = c.capacidade();
+
+        List<Ocorrencia> porPrioridade = otimizacao.selecionar(candidatas, capacidade,
+                OtimizacaoRecursos.CRITERIO_PRIORIDADE).getSelecionadas();
+        List<Ocorrencia> porPessoas = otimizacao.selecionar(candidatas, capacidade,
+                OtimizacaoRecursos.CRITERIO_PESSOAS).getSelecionadas();
+        List<Ocorrencia> gulosa = ordenador.selecionarComLimiteDeTempo(candidatas, capacidade);
+
+        System.out.println();
+        System.out.println("Cenários com " + candidatas.size() + " candidatas e " + capacidade + " minutos:");
+        System.out.printf("%-30s %12s %12s %12s %10s%n", "Cenário", "Ocorrências", "Tempo usado", "Prioridade", "Pessoas");
+        linhaCenario("PD maximizando prioridade", porPrioridade);
+        linhaCenario("PD maximizando pessoas", porPessoas);
+        linhaCenario("Guloso (módulo 5)", gulosa);
+    }
+
+    private static void linhaCenario(String nome, List<Ocorrencia> lista) {
+        int tempo = 0;
+        for (Ocorrencia o : lista) {
+            tempo += o.getTempoEstimado();
+        }
+        System.out.printf("%-30s %12d %12d %12d %10d%n", nome, lista.size(), tempo,
+                OtimizacaoRecursos.beneficioTotal(lista, OtimizacaoRecursos.CRITERIO_PRIORIDADE),
+                OtimizacaoRecursos.beneficioTotal(lista, OtimizacaoRecursos.CRITERIO_PESSOAS));
+    }
+
+    // ===================== MÓDULO 9 / RESUMO DA SELEÇÃO =====================
+
+    private static void mostrarResumoSelecao() {
+        if (ultimaSelecao == null || ultimaSelecao.isEmpty()) {
+            System.out.println("Nenhuma seleção feita ainda. Faça uma seleção (opção 1 ou 2 deste modo) antes.");
+            return;
+        }
+
+        int tempo = 0;
+        int pessoas = 0;
+        int prioridade = 0;
+        for (Ocorrencia o : ultimaSelecao) {
+            tempo += o.getTempoEstimado();
+            pessoas += o.getPessoasEnvolvidas();
+            prioridade += o.getPrioridade();
+        }
+
+        System.out.println();
+        System.out.println("Resumo da última seleção: " + ultimaSelecao.size() + " ocorrência(s)");
+        System.out.println("Tempo total: " + tempo + " min | Pessoas: " + pessoas
+                + " | Prioridade média: " + String.format("%.1f", (double) prioridade / ultimaSelecao.size()));
+
+        System.out.println();
+        System.out.println("Recursos necessários (por tipo):");
+        for (ResumoSelecao.Grupo g : resumo.agruparPorTipo(ultimaSelecao)) {
+            System.out.println(g.getNome() + ": " + g.getQuantidade() + " x " + ResumoSelecao.recursoDoTipo(g.getNome())
+                    + " | " + g.getTempo() + " min | " + g.getPessoas() + " pessoa(s)");
+        }
+
+        List<ResumoSelecao.Grupo> regioes = resumo.agruparPorRegiao(ultimaSelecao);
+        System.out.println();
+        System.out.println("Por região:");
+        for (ResumoSelecao.Grupo g : regioes) {
+            System.out.println(g.getNome() + ": " + g.getQuantidade() + " ocorrência(s) | " + g.getTempo() + " min | "
+                    + g.getPessoas() + " pessoa(s) | prioridade média "
+                    + String.format("%.1f", (double) g.getSomaPrioridade() / g.getQuantidade()));
+        }
+        System.out.println("Região que mais recebe equipes: " + regioes.get(0).getNome());
     }
 
     // ===================== MÓDULO 6 / PLANEJAMENTO OPERACIONAL =====================

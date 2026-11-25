@@ -22,13 +22,7 @@ public class Organizador {
     // mesmo padrao usado no ConsultaRapida: insere o id na lista de uma categoria,
     // criando a lista se ainda nao existir uma para aquela chave
     private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
-        String chaveNormalizada = normalizar(chave);
-        List<String> lista = indice.buscar(chaveNormalizada);
-        if (lista == null) {
-            lista = new ArrayList<>();
-            indice.inserir(chaveNormalizada, lista);
-        }
-        lista.add(id);
+        indice.buscarOuInserir(normalizar(chave), ArrayList::new).add(id);
     }
 
     // mesmo padrao de normalizacao usado no ConsultaRapida: sem espaco nas pontas, maiusculo

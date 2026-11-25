@@ -112,14 +112,15 @@ public class OrdenadorAtendimento {
     // ordena cada metade e intercala as duas metades ja ordenadas.
     // 'comparador' define apenas o CRITERIO de comparacao (qual veio primeiro);
     // o algoritmo de ordenacao em si (a divisao e a intercalacao) e todo escrito aqui.
-    private void mergeSort(List<Ocorrencia> lista, Comparator<Ocorrencia> comparador) {
+    // generico e estatico pra outros modulos do pacote reaproveitarem (ex: ResumoSelecao).
+    static <T> void mergeSort(List<T> lista, Comparator<T> comparador) {
         if (lista.size() <= 1) {
             return; // lista de 0 ou 1 elemento ja esta ordenada
         }
 
         int meio = lista.size() / 2;
-        List<Ocorrencia> esquerda = new ArrayList<>(lista.subList(0, meio));
-        List<Ocorrencia> direita = new ArrayList<>(lista.subList(meio, lista.size()));
+        List<T> esquerda = new ArrayList<>(lista.subList(0, meio));
+        List<T> direita = new ArrayList<>(lista.subList(meio, lista.size()));
 
         mergeSort(esquerda, comparador);
         mergeSort(direita, comparador);
@@ -130,7 +131,7 @@ public class OrdenadorAtendimento {
     // junta as duas metades (ja ordenadas) de volta em 'destino', mantendo a ordem;
     // em caso de empate, prioriza o elemento da esquerda primeiro - e isso que garante
     // a estabilidade (quem entrou primeiro na lista original sai primeiro em empate)
-    private void intercalar(List<Ocorrencia> destino, List<Ocorrencia> esquerda, List<Ocorrencia> direita, Comparator<Ocorrencia> comparador) {
+    private static <T> void intercalar(List<T> destino, List<T> esquerda, List<T> direita, Comparator<T> comparador) {
         int i = 0, j = 0, k = 0;
 
         while (i < esquerda.size() && j < direita.size()) {

@@ -28,10 +28,10 @@ Em sistemas sem o comando `find` (Windows PowerShell), compile listando as pasta
 O programa deve ser executado a partir da raiz do projeto, pois o arquivo de
 dados é lido por caminho relativo (`data/ocorrencias.csv`).
 
-> **Estado atual:** os módulos 1 a 5 (Trabalho 1) e o módulo 6 (Trabalho 2)
-> estão implementados como classes em `src/modulos/`. O menu interativo
-> (`src/Main.java`) dá acesso a eles e aos modos de interação (Investigação,
-> Operação Resgate e Consulta Rápida). Os módulos 7, 8 e 9 estão em
+> **Estado atual:** os módulos 1 a 5 (Trabalho 1) e os módulos 6, 7 e 9
+> (Trabalho 2) estão implementados em `src/modulos/`. O menu (`src/Main.java`)
+> é organizado pelos quatro modos de interação (ver
+> [Modos de interação](#modos-de-interação)). O módulo 8 está em
 > desenvolvimento.
 
 ## Fonte de dados
@@ -205,6 +205,9 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
     cores (não visitado, em visita, concluído), feita só nesses vértices,
     encontra uma aresta de volta e reconstrói o ciclo pelos pais. Custo
     O(V + E).
+- **Programação dinâmica** (`src/modulos/OtimizacaoRecursos.java`): seleção
+  ótima de ocorrências dentro de um tempo disponível (módulo 7), como o problema
+  da mochila 0/1. Usa uma matriz `dp[n+1][capacidade+1]` de inteiros.
 - **Merge sort** (`src/modulos/OrdenadorAtendimento.java`), estrutura auxiliar:
   ordenação implementada pelo grupo, usada para montar a fila de atendimento e
   para ordenar as candidatas do algoritmo guloso. Divide a lista ao meio
@@ -291,6 +294,30 @@ vão de 30 a 100 min, com média de 53 min em EMS, 54 min em Traffic e 76 min em
   só é executada quando há inconsistência, e devolve a sequência exata de
   atividades que forma o ciclo, para que a dependência errada possa ser
   corrigida.
+
+- **Programação dinâmica para a seleção do módulo 7:** o guloso do módulo 5
+  é rápido, mas pode errar. Com 480 minutos e todas as pendentes, ele chega a
+  31 de prioridade total, e a programação dinâmica chega a 34 (ver
+  [Módulo 7](#módulo-7--operação-estratégica-otimização-de-recursos)). A
+  programação dinâmica testa, para cada ocorrência e cada tempo possível, as
+  duas decisões (pegar ou não pegar) e reaproveita os resultados já
+  calculados, então garante o ótimo sem testar todas as 2^n combinações.
+- **Tempo como capacidade:** o tempo estimado já existe para toda ocorrência
+  (`RegraTempo`), é inteiro e pequeno (30 a 100 min), então serve bem de
+  índice da tabela. O limite de 1440 min (um dia) evita uma tabela grande
+  demais: com 5000 ocorrências são cerca de 7,2 milhões de inteiros (~29 MB).
+
+## Modos de interação
+
+O menu principal tem os quatro modos pedidos no enunciado. Cada modo só reúne
+os menus dos módulos que já existiam, sem reimplementar nada.
+
+| Opção | Modo | O que tem |
+|---|---|---|
+| 1 | Consulta Rápida | Central de Ocorrências (módulo 1), busca rápida (módulo 2) e filtros (módulo 3) |
+| 2 | Investigação | integridade dos registros (módulo 4), dependências entre atividades (módulo 6) e detecção de ciclos |
+| 3 | Planejamento Estratégico | ordem e seleção gulosa (módulo 5), seleção por programação dinâmica (módulo 7), comparação de cenários e resumo da seleção (módulo 9) |
+| 4 | Logística | rede de emergências (módulo 8, em desenvolvimento) |
 
 ## Funcionalidades
 
@@ -467,8 +494,8 @@ exemplo, ordenar apenas as ocorrências pendentes de uma região.
 ### Módulo 6 – Planejamento Operacional: Dependências de Atendimento
 
 Implementado em `src/modulos/PlanejamentoOperacional.java`, usando o grafo de
-`src/estruturas/GrafoDirecionado.java`. Acesso pela opção 6 do menu principal;
-a detecção de ciclos também está no Modo Investigação (opção 9).
+`src/estruturas/GrafoDirecionado.java`. Acesso pelo Modo Investigação
+(opção 2), que também tem a detecção de ciclos direto na opção 3.
 
 **Modelagem:** cada operação tem o seu próprio grafo, guardado numa
 `TabelaHash` pelo nome da operação. Vértice = atividade operacional; aresta
@@ -542,6 +569,144 @@ desaparece e a mesma consulta passa a devolver uma ordem válida de 5 etapas.
 | Ordenação topológica (Kahn) | O(V + E) |
 | Encontrar o ciclo (DFS) | O(V + E), executada só quando há ciclo |
 | Verificar ciclos em todas as operações | soma de O(V + E) de cada operação |
+
+### Módulo 7 – Operação Estratégica: Otimização de Recursos
+
+Implementado em `src/modulos/OtimizacaoRecursos.java`. Acesso pelo Modo
+Planejamento Estratégico, opção 2.
+
+**Modelagem (mochila 0/1):**
+
+- **capacidade:** tempo total disponível em minutos, informado pelo usuário
+  (de 1 a 1440);
+- **custo** de cada ocorrência: o tempo estimado (`RegraTempo`);
+- **benefício:** o usuário escolhe entre a prioridade (1 a 5) ou a quantidade
+  de pessoas envolvidas (`RegraPessoas`);
+- **decisão:** cada ocorrência entra inteira ou fica de fora.
+
+As candidatas são as ocorrências pendentes, e dá para aplicar as mesmas
+restrições do módulo 5 (região, tipo, prioridade mínima e pessoas mínimas),
+reaproveitando os filtros do módulo 3.
+
+**Estado:** `dp[i][t]` = maior benefício possível usando só as `i` primeiras
+ocorrências com `t` minutos.
+
+**Recorrência:**
+
+    dp[0][t] = 0
+    dp[i][t] = dp[i-1][t]                                      (não atende a i)
+    dp[i][t] = max(dp[i-1][t], dp[i-1][t - tempo_i] + benef_i)  (se tempo_i <= t)
+
+A resposta é `dp[n][capacidade]`. Para saber quem foi escolhido, o algoritmo
+volta pela tabela de `i = n` até `1`: se `dp[i][t]` é diferente de
+`dp[i-1][t]`, a ocorrência `i` entrou e `t` diminui o tempo dela.
+
+**Saída:** lista das selecionadas (tempo e benefício de cada uma), tempo usado,
+benefício total, quantas ficaram de fora (com opção de listar cada uma e o
+motivo: não cabe sozinha, não soma nada no critério, ou a combinação escolhida
+rende mais) e uma justificativa com o tamanho da tabela, o valor ótimo e o que
+o guloso do módulo 5 conseguiria com o mesmo tempo.
+
+A opção 3 do modo (**comparar cenários**) roda as mesmas candidatas na
+programação dinâmica por prioridade, por pessoas e no guloso, e mostra lado a
+lado quantas ocorrências, tempo usado, prioridade total e pessoas de cada um.
+
+> Este módulo é uma simulação para apoio ao planejamento e não substitui os
+> protocolos oficiais de priorização e atendimento.
+
+**Exemplo 1:** todas as pendentes, 480 min, maximizando prioridade:
+
+    SELECIONADAS (7):
+    Id 19 | EMS | RESPIRATORY EMERGENCY | PENNSBURG | 60 min | prioridade 4
+    Id 24 | EMS | OVERDOSE | POTTSTOWN | 70 min | prioridade 5
+    Id 27 | EMS | CVA/STROKE | CHELTENHAM | 70 min | prioridade 5
+    ...
+    Tempo usado: 480 de 480 minutos.
+    Total de prioridade: 34
+    Ficaram de fora: 4993 ocorrência(s).
+    ...
+    - Tabela de 5001 x 481 posições; a resposta ótima é dp[5000][480] = 34.
+    - O guloso do módulo 5, com o mesmo tempo, chega a 31 de prioridade.
+
+**Exemplo 2:** comparação de cenários, todas as pendentes, 480 min:
+
+    Cenário                         Ocorrências  Tempo usado   Prioridade    Pessoas
+    PD maximizando prioridade                 7          480           34          7
+    PD maximizando pessoas                    7          480           31         30
+    Guloso (módulo 5)                         7          480           31         30
+
+Cada critério ganha no que ele maximiza. O guloso empata com a programação
+dinâmica por pessoas aqui, mas perde em prioridade.
+
+**Exemplo 3:** região NORRISTOWN, tipo FIRE (36 candidatas), 200 min,
+maximizando pessoas: são escolhidos dois BUILDING FIRE (100 min e 4 pessoas
+cada, total 8). Entre as que ficam de fora, os FIRE ALARM aparecem com
+"não soma nada nesse critério" (0 pessoas) e os GAS-ODOR/LEAK (90 min, 3
+pessoas) com "cabe, mas a combinação escolhida rende mais".
+
+**Complexidade** (n = candidatas, C = capacidade em minutos):
+
+| Etapa | Custo |
+|---|---|
+| Preencher a tabela | O(n · C) de tempo e de memória |
+| Reconstruir a seleção | O(n) |
+| Comparar cenários | 2 execuções da PD + o guloso (O(n log n)) |
+
+Com 5000 candidatas e 480 min são cerca de 2,4 milhões de posições, o que roda
+na hora.
+
+### Módulo 9 – Laboratório de Inovação: Resumo da Seleção
+
+Implementado em `src/modulos/ResumoSelecao.java`. Acesso pelo Modo
+Planejamento Estratégico, opção 4.
+
+**Necessidade:** depois de escolher quais ocorrências atender (módulo 7 ou
+seleção gulosa do módulo 5), a central ainda precisa saber quais viaturas vão
+sair e para onde vão as equipes. A lista de selecionadas sozinha não mostra
+isso.
+
+**Funcionalidade:** a última seleção feita fica guardada, e o resumo mostra:
+
+- totais: tempo, pessoas e prioridade média;
+- recursos necessários por tipo (EMS = ambulância, FIRE = caminhão de
+  bombeiros, TRAFFIC = viatura de trânsito);
+- ocorrências por região (quantidade, tempo, pessoas e prioridade média), da
+  região com mais atendimentos para a com menos;
+- a região que mais recebe equipes.
+
+**Integração:** usa a `TabelaHash` do Trabalho 1 para agrupar (chave = região
+ou tipo) e recebe a lista gerada pelos módulos 5 ou 7. A ordenação dos grupos
+é um insertion sort simples, já que são poucos grupos.
+
+**Exemplo** (depois do exemplo 1 do módulo 7):
+
+    Resumo da última seleção: 7 ocorrência(s)
+    Tempo total: 480 min | Pessoas: 7 | Prioridade média: 4.9
+
+    Recursos necessários (por tipo):
+    EMS: 7 x ambulância | 480 min | 7 pessoa(s)
+
+    Por região:
+    CHELTENHAM: 2 ocorrência(s) | 140 min | 2 pessoa(s) | prioridade média 5.0
+    LANSDALE: 1 ocorrência(s) | 70 min | 1 pessoa(s) | prioridade média 5.0
+    ...
+    Região que mais recebe equipes: CHELTENHAM
+
+**Complexidade:** O(s) para agrupar as `s` selecionadas (O(1) em média por
+inserção na tabela hash) mais O(g²) para ordenar os `g` grupos.
+
+## Integração entre o Trabalho 1 e o Trabalho 2
+
+- Os módulos novos trabalham sobre as mesmas ocorrências carregadas pela
+  Central (módulo 1), guardadas na `TabelaHash` do T1.
+- O módulo 6 busca a ocorrência pelo id na tabela hash e usa o tipo dela para
+  escolher a operação.
+- O módulo 7 pega as candidatas pelos índices do Organizador (módulo 3) e usa o
+  tempo e as pessoas calculados pelas regras do T1 (`RegraTempo`,
+  `RegraPessoas`). Ele é comparado com o guloso do módulo 5.
+- O módulo 9 agrupa com a `TabelaHash` do T1 e resume o que os módulos 5 e 7
+  selecionaram.
+- Os menus antigos continuam iguais e foram só reunidos nos modos de interação.
 
 ## Critérios de decisão
 
