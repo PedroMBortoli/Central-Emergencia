@@ -396,6 +396,8 @@ public class Main {
         central = nova;
         integridade = new Integridade(central);
         arquivoCarregado = caminho;
+        // a selecao anterior era da base antiga, entao o resumo (modulo 9) nao vale mais
+        ultimaSelecao = null;
         System.out.println(carregadas + " ocorrências carregadas de " + caminho + ".");
     }
 
@@ -507,18 +509,31 @@ public class Main {
 
     // ===================== MÓDULO 7 / OTIMIZAÇÃO DE RECURSOS =====================
 
-    private static void otimizarSelecao() {
+    // candidatas + tempo disponivel: a entrada comum da otimizacao e da comparacao de cenarios
+    private record Cenario(List<Ocorrencia> candidatas, int capacidade) {
+    }
+
+    // monta as candidatas com as restricoes e le o tempo disponivel;
+    // devolve null se nenhuma ocorrencia sobrou depois das restricoes
+    private static Cenario prepararCenario() {
         List<Ocorrencia> candidatas = escolherCandidatas();
         if (candidatas.isEmpty()) {
             System.out.println("Nenhuma ocorrência pendente atende às restrições.");
+            return null;
+        }
+        return new Cenario(candidatas, lerCapacidade());
+    }
+
+    private static void otimizarSelecao() {
+        Cenario c = prepararCenario();
+        if (c == null) {
             return;
         }
-        int capacidade = lerCapacidade();
         int criterio = lerCriterio();
 
-        OtimizacaoRecursos.Resultado r = otimizacao.selecionar(candidatas, capacidade, criterio);
+        OtimizacaoRecursos.Resultado r = otimizacao.selecionar(c.candidatas(), c.capacidade(), criterio);
         ultimaSelecao = r.getSelecionadas();
-        mostrarResultado(r, candidatas);
+        mostrarResultado(r, c.candidatas());
     }
 
     private static int lerCapacidade() {
@@ -532,11 +547,21 @@ public class Main {
     }
 
     private static int lerCriterio() {
-        System.out.println("O que maximizar?");
-        System.out.println("1 - Prioridade total");
-        System.out.println("2 - Quantidade de pessoas atendidas");
-        System.out.print("Escolha uma opção: ");
-        return lerOpcao() == 2 ? OtimizacaoRecursos.CRITERIO_PESSOAS : OtimizacaoRecursos.CRITERIO_PRIORIDADE;
+        while (true) {
+            System.out.println("O que maximizar?");
+            System.out.println("1 - Prioridade total");
+            System.out.println("2 - Quantidade de pessoas atendidas");
+            System.out.print("Escolha uma opção: ");
+            switch (lerOpcao()) {
+                case 1 -> {
+                    return OtimizacaoRecursos.CRITERIO_PRIORIDADE;
+                }
+                case 2 -> {
+                    return OtimizacaoRecursos.CRITERIO_PESSOAS;
+                }
+                default -> System.out.println("Opção inválida.");
+            }
+        }
     }
 
     private static void mostrarResultado(OtimizacaoRecursos.Resultado r, List<Ocorrencia> candidatas) {
@@ -587,12 +612,12 @@ public class Main {
 
     // roda o mesmo conjunto de candidatas em 3 estrategias e mostra lado a lado
     private static void compararCenarios() {
-        List<Ocorrencia> candidatas = escolherCandidatas();
-        if (candidatas.isEmpty()) {
-            System.out.println("Nenhuma ocorrência pendente atende às restrições.");
+        Cenario c = prepararCenario();
+        if (c == null) {
             return;
         }
-        int capacidade = lerCapacidade();
+        List<Ocorrencia> candidatas = c.candidatas();
+        int capacidade = c.capacidade();
 
         List<Ocorrencia> porPrioridade = otimizacao.selecionar(candidatas, capacidade,
                 OtimizacaoRecursos.CRITERIO_PRIORIDADE).getSelecionadas();

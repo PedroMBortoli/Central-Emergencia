@@ -3,6 +3,7 @@ package estruturas;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class TabelaHash <K, V> {
 
@@ -106,6 +107,17 @@ public class TabelaHash <K, V> {
             }
         }
         return null;
+    }
+
+    //devolve o valor da chave; se ainda nao existir, cria com 'criar', insere e devolve o novo
+    //(padrao "busca ou cria" usado pelos indices de categoria e pelos agrupamentos)
+    public V buscarOuInserir(K chave, Supplier<V> criar){
+        V valor = buscar(chave);
+        if (valor == null){
+            valor = criar.get();
+            inserir(chave, valor);
+        }
+        return valor;
     }
 
     //percorre todos os buckets e devolve todos os valores guardados na tabela

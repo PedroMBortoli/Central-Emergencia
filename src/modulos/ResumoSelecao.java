@@ -62,28 +62,16 @@ public class ResumoSelecao {
 
     // acha o grupo da chave (ou cria se ainda nao existe) e soma a ocorrencia nele
     private void somar(TabelaHash<String, Grupo> tabela, String chave, Ocorrencia o) {
-        Grupo g = tabela.buscar(chave);
-        if (g == null) {
-            g = new Grupo(chave);
-            tabela.inserir(chave, g);
-        }
+        Grupo g = tabela.buscarOuInserir(chave, () -> new Grupo(chave));
         g.quantidade++;
         g.tempo += o.getTempoEstimado();
         g.pessoas += o.getPessoasEnvolvidas();
         g.somaPrioridade += o.getPrioridade();
     }
 
-    // insertion sort simples, do maior grupo pro menor (sao poucos grupos, entao nao pesa)
+    // do maior grupo pro menor, reaproveitando o merge sort (estavel) do modulo 5
     private List<Grupo> ordenarPorQuantidade(List<Grupo> grupos) {
-        for (int i = 1; i < grupos.size(); i++) {
-            Grupo atual = grupos.get(i);
-            int j = i - 1;
-            while (j >= 0 && grupos.get(j).quantidade < atual.quantidade) {
-                grupos.set(j + 1, grupos.get(j));
-                j--;
-            }
-            grupos.set(j + 1, atual);
-        }
+        OrdenadorAtendimento.mergeSort(grupos, (a, b) -> Integer.compare(b.quantidade, a.quantidade));
         return grupos;
     }
 
