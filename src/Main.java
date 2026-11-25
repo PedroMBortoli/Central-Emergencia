@@ -6,7 +6,9 @@ import modulos.OrdenadorAtendimento;
 import modulos.OtimizacaoRecursos;
 import modulos.PlanejamentoOperacional;
 import modulos.ResumoSelecao;
+import modulos.RedeEmergencias;
 import estruturas.GrafoDirecionado;
+import estruturas.GrafoPonderado;
 
 import java.util.List;
 import java.util.Scanner;
@@ -16,12 +18,14 @@ public class Main {
     private static final String ARQUIVO_DADOS = "data/ocorrencias.csv";
     private static final String ARQUIVO_TESTE_INTEGRIDADE = "data/ocorrencias_teste_integridade.csv";
     private static final String ARQUIVO_DEPENDENCIAS = "data/dependencias.csv";
+    private static final String ARQUIVO_REDE = "data/rede.csv";
 
     private static final Scanner scanner = new Scanner(System.in);
     private static final OrdenadorAtendimento ordenador = new OrdenadorAtendimento();
     private static final PlanejamentoOperacional planejamento = new PlanejamentoOperacional();
     private static final OtimizacaoRecursos otimizacao = new OtimizacaoRecursos();
     private static final ResumoSelecao resumo = new ResumoSelecao();
+    private static final RedeEmergencias rede = new RedeEmergencias();
 
     // ultima lista de ocorrencias escolhidas no planejamento (usada no resumo do modulo 9)
     private static List<Ocorrencia> ultimaSelecao;
@@ -41,6 +45,10 @@ public class Main {
 
         int dependencias = planejamento.carregarDependencias(ARQUIVO_DEPENDENCIAS);
         System.out.println(dependencias + " dependências carregadas de " + ARQUIVO_DEPENDENCIAS + ".");
+
+        int conexoes = rede.carregarRede(ARQUIVO_REDE);
+        System.out.println(rede.getQuantidadeVertices() + " pontos e " + conexoes
+                + " conexões carregados de " + ARQUIVO_REDE + ".");
 
         boolean sair = false;
         while (!sair) {
@@ -122,7 +130,113 @@ public class Main {
     private static void modoLogistica() {
         System.out.println();
         System.out.println("=== Modo Logística ===");
-        System.out.println("Módulo 8 (rede de emergências) ainda em desenvolvimento.");
+        System.out.println("1 - Caminho mínimo entre dois pontos");
+        System.out.println("2 - Árvore geradora mínima da rede");
+        System.out.println("3 - Listar conexões de um ponto (vizinhos e custos)");
+        System.out.println("4 - Listar todos os pontos da rede");
+        System.out.println("5 - Caminho mínimo até a região de uma ocorrência");
+        System.out.print("Escolha uma opção: ");
+
+        switch (lerOpcao()) {
+            case 1 -> mostrarCaminhoMinimo();
+            case 2 -> mostrarArvoreGeradoraMinima();
+            case 3 -> listarConexoesDoPonto();
+            case 4 -> listarPontosDaRede();
+            case 5 -> caminhoAteOcorrencia();
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    // ===================== MÓDULO 8 / REDE DE EMERGÊNCIAS =====================
+
+    private static void mostrarCaminhoMinimo() {
+        String origem = lerTexto("Ponto de origem: ").trim().toUpperCase();
+        String destino = lerTexto("Ponto de destino: ").trim().toUpperCase();
+
+        RedeEmergencias.ResultadoCaminho resultado = rede.caminhoMinimo(origem, destino);
+        if (resultado == null) {
+            System.out.println("Ponto de origem ou de destino não existe na rede.");
+            return;
+        }
+        if (!resultado.existeCaminho()) {
+            System.out.println("Não existe caminho entre " + origem + " e " + destino + " na rede atual.");
+            return;
+        }
+        System.out.println("Caminho: " + String.join(" -> ", resultado.getCaminho()));
+        System.out.println("Custo total: " + resultado.getCustoTotal());
+    }
+
+    private static void mostrarArvoreGeradoraMinima() {
+        RedeEmergencias.ResultadoAGM resultado = rede.arvoreGeradoraMinima();
+
+        System.out.println("Conexões escolhidas (" + resultado.getConexoes().size() + "):");
+        for (GrafoPonderado.Aresta aresta : resultado.getConexoes()) {
+            System.out.println(rede.nomeDoPonto(aresta.getOrigem()) + " - " + rede.nomeDoPonto(aresta.getDestino())
+                    + " | custo " + aresta.getCusto());
+        }
+        System.out.println("Custo total: " + resultado.getCustoTotal());
+
+        if (resultado.ehArvoreUnica()) {
+            System.out.println("A rede é conexa: uma única árvore liga todos os "
+                    + rede.getQuantidadeVertices() + " pontos.");
+        } else {
+            System.out.println("A rede não é conexa: o resultado é uma floresta com "
+                    + resultado.getComponentes() + " componentes, não uma única árvore.");
+        }
+    }
+
+    private static void listarConexoesDoPonto() {
+        String ponto = lerTexto("Ponto: ").trim().toUpperCase();
+        if (!rede.contemPonto(ponto)) {
+            System.out.println("Ponto não encontrado na rede.");
+            return;
+        }
+        List<GrafoPonderado.Aresta> conexoes = rede.getConexoes(ponto);
+        if (conexoes.isEmpty()) {
+            System.out.println(ponto + " não tem nenhuma conexão cadastrada (ponto isolado).");
+            return;
+        }
+        System.out.println(conexoes.size() + " conexão(ões) de " + ponto + ":");
+        for (GrafoPonderado.Aresta aresta : conexoes) {
+            System.out.println("  " + rede.nomeDoPonto(aresta.getDestino()) + " | custo " + aresta.getCusto());
+        }
+    }
+
+    private static void listarPontosDaRede() {
+        List<String> pontos = rede.getPontos();
+        System.out.println(pontos.size() + " ponto(s) na rede:");
+        for (String ponto : pontos) {
+            System.out.println("  " + ponto);
+        }
+    }
+
+    // integra com o T1: usa a regiao da ocorrencia (ja cadastrada na central) como destino do Dijkstra
+    private static void caminhoAteOcorrencia() {
+        int id = lerInteiro("Id da ocorrência: ");
+        Ocorrencia o = central.consultar(id);
+        if (o == null) {
+            System.out.println("Ocorrência não encontrada.");
+            return;
+        }
+        String regiao = o.getRegiao();
+        System.out.println("Ocorrência " + id + " | " + o.getTipo() + " | " + o.getMotivo() + " | região " + regiao);
+        if (!rede.contemPonto(regiao)) {
+            System.out.println("A região desta ocorrência não está cadastrada na rede logística.");
+            return;
+        }
+
+        String origem = lerTexto("Ponto de partida (base/hospital/posto): ").trim().toUpperCase();
+        RedeEmergencias.ResultadoCaminho resultado = rede.caminhoMinimo(origem, regiao);
+        if (resultado == null) {
+            System.out.println("Ponto de partida não existe na rede.");
+            return;
+        }
+        if (!resultado.existeCaminho()) {
+            System.out.println("Não existe caminho até " + regiao + " na rede atual.");
+            return;
+        }
+        System.out.println("Caminho: " + String.join(" -> ", resultado.getCaminho()));
+        System.out.println("Custo total: " + resultado.getCustoTotal());
     }
 
     // ===================== MÓDULO 1 — CENTRAL DE OCORRÊNCIAS =====================
