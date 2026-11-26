@@ -704,49 +704,6 @@ pessoas) com "cabe, mas a combinação escolhida rende mais".
 Com 5000 candidatas e 480 min são cerca de 2,4 milhões de posições, o que roda
 na hora.
 
-### Módulo 9 – Laboratório de Inovação: Resumo da Seleção
-
-Implementado em `src/modulos/ResumoSelecao.java`. Acesso pelo Modo
-Planejamento Estratégico, opção 4.
-
-**Necessidade:** depois de escolher quais ocorrências atender (módulo 7 ou
-seleção gulosa do módulo 5), a central ainda precisa saber quais viaturas vão
-sair e para onde vão as equipes. A lista de selecionadas sozinha não mostra
-isso.
-
-**Funcionalidade:** a última seleção feita fica guardada, e o resumo mostra:
-
-- totais: tempo, pessoas e prioridade média;
-- recursos necessários por tipo (EMS = ambulância, FIRE = caminhão de
-  bombeiros, TRAFFIC = viatura de trânsito);
-- ocorrências por região (quantidade, tempo, pessoas e prioridade média), da
-  região com mais atendimentos para a com menos;
-- a região que mais recebe equipes.
-
-**Integração:** usa a `TabelaHash` do Trabalho 1 para agrupar (chave = região
-ou tipo) e recebe a lista gerada pelos módulos 5 ou 7. A ordenação dos grupos
-reaproveita o merge sort do módulo 5 (`OrdenadorAtendimento.mergeSort`, que
-passou a ser genérico para que outros módulos, como este e o Kruskal do
-módulo 8, pudessem reaproveitá-lo).
-
-**Exemplo** (depois do exemplo 1 do módulo 7):
-
-    Resumo da última seleção: 7 ocorrência(s)
-    Tempo total: 480 min | Pessoas: 7 | Prioridade média: 4.9
-
-    Recursos necessários (por tipo):
-    EMS: 7 x ambulância | 480 min | 7 pessoa(s)
-
-    Por região:
-    CHELTENHAM: 2 ocorrência(s) | 140 min | 2 pessoa(s) | prioridade média 5.0
-    LANSDALE: 1 ocorrência(s) | 70 min | 1 pessoa(s) | prioridade média 5.0
-    ...
-    Região que mais recebe equipes: CHELTENHAM
-
-**Complexidade:** O(s) para agrupar as `s` selecionadas (O(1) em média por
-inserção na tabela hash) mais O(g log g) para ordenar os `g` grupos com o
-merge sort.
-
 ### Módulo 8 – Rede de Emergências: O Desafio Logístico
 
 Implementado em `src/modulos/RedeEmergencias.java`, usando o grafo de
@@ -841,6 +798,49 @@ ocorrências.
 | Kruskal (merge sort das arestas + union-find) | O(E log E) |
 
 Com 32 vértices e 59 arestas, as duas operações rodam em milissegundos.
+
+### Módulo 9 – Laboratório de Inovação: Resumo da Seleção
+
+Implementado em `src/modulos/ResumoSelecao.java`. Acesso pelo Modo
+Planejamento Estratégico, opção 4.
+
+**Necessidade:** depois de escolher quais ocorrências atender (módulo 7 ou
+seleção gulosa do módulo 5), a central ainda precisa saber quais viaturas vão
+sair e para onde vão as equipes. A lista de selecionadas sozinha não mostra
+isso.
+
+**Funcionalidade:** a última seleção feita fica guardada, e o resumo mostra:
+
+- totais: tempo, pessoas e prioridade média;
+- recursos necessários por tipo (EMS = ambulância, FIRE = caminhão de
+  bombeiros, TRAFFIC = viatura de trânsito);
+- ocorrências por região (quantidade, tempo, pessoas e prioridade média), da
+  região com mais atendimentos para a com menos;
+- a região que mais recebe equipes.
+
+**Integração:** usa a `TabelaHash` do Trabalho 1 para agrupar (chave = região
+ou tipo) e recebe a lista gerada pelos módulos 5 ou 7. A ordenação dos grupos
+reaproveita o merge sort do módulo 5 (`OrdenadorAtendimento.mergeSort`, que
+passou a ser genérico para que outros módulos, como este e o Kruskal do
+módulo 8, pudessem reaproveitá-lo).
+
+**Exemplo** (depois do exemplo 1 do módulo 7):
+
+    Resumo da última seleção: 7 ocorrência(s)
+    Tempo total: 480 min | Pessoas: 7 | Prioridade média: 4.9
+
+    Recursos necessários (por tipo):
+    EMS: 7 x ambulância | 480 min | 7 pessoa(s)
+
+    Por região:
+    CHELTENHAM: 2 ocorrência(s) | 140 min | 2 pessoa(s) | prioridade média 5.0
+    LANSDALE: 1 ocorrência(s) | 70 min | 1 pessoa(s) | prioridade média 5.0
+    ...
+    Região que mais recebe equipes: CHELTENHAM
+
+**Complexidade:** O(s) para agrupar as `s` selecionadas (O(1) em média por
+inserção na tabela hash) mais O(g log g) para ordenar os `g` grupos com o
+merge sort.
 
 ## Integração entre o Trabalho 1 e o Trabalho 2
 
