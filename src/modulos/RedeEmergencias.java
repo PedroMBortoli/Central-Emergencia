@@ -11,18 +11,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// Modulo 8: rede de bases, hospitais, postos de apoio e regioes, usada pra
-// planejar deslocamento de equipes (Modo Logistica). O grafo e nao direcionado
-// e ponderado (custo = tempo/distancia entre dois pontos); duas tecnicas sobre
-// o mesmo grafo: caminho minimo (Dijkstra) e arvore geradora minima (Kruskal).
+// Modulo 8: rede de bases, hospitais e regioes (grafo nao direcionado e ponderado).
+// Caminho minimo com Dijkstra e arvore geradora minima com Kruskal.
 public class RedeEmergencias {
 
     private final GrafoPonderado grafo = new GrafoPonderado();
 
-    // formato do CSV: origem,destino,custo
-    // uma linha com so a origem preenchida (destino e custo em branco) cadastra
-    // um ponto isolado, sem nenhuma conexao - usado pra demonstrar o caso
-    // "nao existe caminho" e a rede desconexa (floresta) na arvore geradora.
+    // CSV: origem,destino,custo
+    // linha so com a origem cadastra um ponto isolado
     public int carregarRede(String caminho) {
         int carregadas = 0;
         try (BufferedReader leitor = new BufferedReader(new FileReader(caminho))) {
@@ -81,15 +77,12 @@ public class RedeEmergencias {
         return grafo.nomeDoVertice(indice);
     }
 
-    // DIJKSTRA: caminho minimo entre dois pontos, com heap minimo implementado
-    // na mao (HeapMinimo, delecao preguicosa). Guarda anterior[] pra reconstruir
-    // o caminho a partir do destino. Custo O((V + E) log E); como E <= V^2,
-    // log E <= 2 log V, entao isso e O((V + E) log V).
+    // DIJKSTRA com heap minimo; anterior[] monta o caminho. O((V + E) log V)
     public ResultadoCaminho caminhoMinimo(String origemNome, String destinoNome) {
         Integer origem = grafo.indiceDoVertice(origemNome);
         Integer destino = grafo.indiceDoVertice(destinoNome);
         if (origem == null || destino == null) {
-            return null; // algum dos pontos nao existe na rede
+            return null; // ponto nao existe
         }
 
         int n = grafo.getQuantidadeVertices();
@@ -108,12 +101,12 @@ public class RedeEmergencias {
             int v = atual.getVertice();
 
             if (visitado[v]) {
-                continue; // entrada desatualizada: ja processamos v com distancia menor
+                continue; // entrada antiga, v ja foi processado
             }
             visitado[v] = true;
 
             if (v == destino) {
-                break; // destino alcancado com a menor distancia possivel, pode parar
+                break; // chegou no destino
             }
 
             for (GrafoPonderado.Aresta aresta : grafo.getVizinhos(grafo.nomeDoVertice(v))) {
@@ -131,7 +124,7 @@ public class RedeEmergencias {
         }
 
         if (distancia[destino] == Integer.MAX_VALUE) {
-            return new ResultadoCaminho(new ArrayList<>(), -1); // destino inalcancavel
+            return new ResultadoCaminho(new ArrayList<>(), -1); // sem caminho
         }
 
         List<String> caminho = new ArrayList<>();
@@ -165,11 +158,8 @@ public class RedeEmergencias {
         }
     }
 
-    // KRUSKAL: arvore geradora minima (ou floresta, se a rede for desconexa),
-    // com Union-Find implementado na mao pra detectar ciclo. Ordena as arestas
-    // pelo merge sort generico do modulo 5 (OrdenadorAtendimento) e vai pegando
-    // a mais barata que ainda nao fecha ciclo. Custo O(E log E) pra ordenar, mais
-    // O(E) quase-constante no union-find (compressao de caminho + uniao por tamanho).
+    // KRUSKAL: ordena as arestas (merge sort) e pega a mais barata que nao fecha ciclo (Union-Find).
+    // se a rede for desconexa, vira floresta. O(E log E)
     public ResultadoAGM arvoreGeradoraMinima() {
         List<GrafoPonderado.Aresta> arestas = new ArrayList<>(grafo.getTodasArestas());
         OrdenadorAtendimento.mergeSort(arestas, (a, b) -> a.getCusto() - b.getCusto());
@@ -186,8 +176,7 @@ public class RedeEmergencias {
             }
         }
 
-        // conta quantos componentes conexos sobraram (raizes distintas no union-find).
-        // 1 = arvore de verdade liga todo mundo; mais de 1 = floresta (rede desconexa)
+        // componentes = quantidade de raizes. 1 = arvore, mais de 1 = floresta
         int componentes = 0;
         for (int v = 0; v < n; v++) {
             if (uniao.find(v) == v) {

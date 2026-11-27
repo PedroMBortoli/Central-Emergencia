@@ -66,9 +66,7 @@ public class RegraPrioridade {
         }
     }
 
-    // deixa o motivo no formato da tabela: sem espaços nas pontas, em maiúsculas
-    // e sem o " -" que o dataset coloca no fim dos motivos de Traffic
-    // (sem modificador de acesso para ser reaproveitado pelas outras regras do pacote util)
+    // sem espacos nas pontas, maiusculo e sem o " -" do fim dos motivos de Traffic
     static String normalizar(String motivo) {
         if (motivo == null) {
             return "";

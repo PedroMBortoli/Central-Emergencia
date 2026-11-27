@@ -35,8 +35,7 @@ public class TabelaHash <K, V> {
         int hash = 0;
             for (int i = 0; i < s.length(); i++){
 
-                //31 pois é primo e gerando resutltados bastante aleatório mesmo para palavras parecidas
-                //chatAt(i) retorna o caracter da String que ocupa a posição i;
+                //31 e primo e espalha bem palavras parecidas
                 hash = 31 * hash + s.charAt(i);
             }
 
@@ -46,7 +45,7 @@ public class TabelaHash <K, V> {
     private int indice (K chave){
         int hash = calculaHash(chave);
 
-        //Math.abs(hash) retorna o valor em modulo de hash - nunca tera codigo negativo
+        //evita indice negativo
         return Math.abs(hash) % capacidade;
     }
 
@@ -56,7 +55,7 @@ public class TabelaHash <K, V> {
 
         int idx = indice(chave);
 
-        //caso de ser uma posição vazia - insere o objeto nela e prepara uma lista encadeada a partir dessa posição
+        //posicao vazia: cria a lista encadeada
         if (buckets[idx] == null) {
             buckets[idx] = new LinkedList<>();
         }
@@ -86,7 +85,7 @@ public class TabelaHash <K, V> {
             return false;
         }
 
-        //percorre a lista e remove apenas o objeto Par<K, V> cuja a chave corresponde a passada no parâmetro do metodo
+        //remove o par com essa chave
         boolean removeu = buckets[idx].removeIf(par -> par.chave.equals(chave));
         if (removeu){
             tamanhoTabela--;
@@ -109,8 +108,7 @@ public class TabelaHash <K, V> {
         return null;
     }
 
-    //devolve o valor da chave; se ainda nao existir, cria com 'criar', insere e devolve o novo
-    //(padrao "busca ou cria" usado pelos indices de categoria e pelos agrupamentos)
+    //busca a chave; se nao existir, cria, insere e devolve
     public V buscarOuInserir(K chave, Supplier<V> criar){
         V valor = buscar(chave);
         if (valor == null){
@@ -120,8 +118,7 @@ public class TabelaHash <K, V> {
         return valor;
     }
 
-    //percorre todos os buckets e devolve todos os valores guardados na tabela
-    //(retorna List<V> em vez de V[] porque Java nao permite criar array de tipo generico)
+    //devolve todos os valores da tabela
     public List<V> listarTodos(){
         List<V> resultado = new ArrayList<>();
 

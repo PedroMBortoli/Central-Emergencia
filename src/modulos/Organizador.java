@@ -14,24 +14,22 @@ public class Organizador {
         this.consultaRapida = consultaRapida;
     }
 
-    // indexa o status de uma ocorrencia (chamado no cadastro, por enquanto)
+    // indexa o status de uma ocorrencia
     public void adicionar(Ocorrencia o) {
         adicionarEmLista(indicePorStatus, o.getStatus(), o.getId());
     }
 
-    // mesmo padrao usado no ConsultaRapida: insere o id na lista de uma categoria,
-    // criando a lista se ainda nao existir uma para aquela chave
+    // adiciona o id na lista da categoria (cria a lista se nao existir)
     private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
         indice.buscarOuInserir(normalizar(chave), ArrayList::new).add(id);
     }
 
-    // mesmo padrao de normalizacao usado no ConsultaRapida: sem espaco nas pontas, maiusculo
+    // sem espaco nas pontas, maiusculo
     private String normalizar(String valor) {
         return valor == null ? "" : valor.trim().toUpperCase();
     }
 
-    // tira o id da lista de status; se a lista ficar vazia, remove a propria
-    // entrada do indice para nao acumular status "mortos" (mesmo padrao do ConsultaRapida)
+    // tira o id do status; se a lista ficar vazia, remove o status
     public void remover(String id, String status) {
         removerDeLista(indicePorStatus, status, id);
     }
@@ -48,8 +46,7 @@ public class Organizador {
         }
     }
 
-    // move o id da lista do status antigo para a lista do status novo; usado
-    // quando CentralOcorrencias.alterarStatus muda o status de uma ocorrencia ja indexada
+    // move o id do status antigo para o novo
     public void atualizarStatus(String id, String statusAntigo, String statusNovo) {
         removerDeLista(indicePorStatus, statusAntigo, id);
         adicionarEmLista(indicePorStatus, statusNovo, id);
@@ -60,12 +57,11 @@ public class Organizador {
         return resolverIds(ids);
     }
 
-    // troca uma lista de ids pelas ocorrencias de verdade, resolvendo cada uma
-    // atraves do indice por id que o ConsultaRapida ja mantem
+    // troca os ids pelas ocorrencias (usa o indice por id do ConsultaRapida)
     private List<Ocorrencia> resolverIds(List<String> ids) {
         List<Ocorrencia> resultado = new ArrayList<>();
         if (ids == null) {
-            return resultado; // status nao encontrado: lista vazia, nao null
+            return resultado; // status nao encontrado
         }
         for (String id : ids) {
             Ocorrencia o = consultaRapida.buscarPorId(id);
@@ -75,9 +71,7 @@ public class Organizador {
         }
         return resultado;
     }
-    // filtro por faixa (prioridade >= limiar): nao faz sentido indexar isso em hash
-    // (hash so resolve igualdade), entao percorre a lista completa recebida
-    // (ex: CentralOcorrencias.listar()) aplicando o criterio
+    // prioridade >= limiar: hash so serve para igualdade, entao percorre a lista
     public List<Ocorrencia> filtrarPorPrioridadeMinima(List<Ocorrencia> todas, int limiar) {
         List<Ocorrencia> resultado = new ArrayList<>();
         for (Ocorrencia o : todas) {
@@ -88,7 +82,7 @@ public class Organizador {
         return resultado;
     }
 
-    // mesmo raciocinio do filtro por prioridade: comparacao numerica, varredura simples
+    // mesma ideia: comparacao numerica, percorre a lista
     public List<Ocorrencia> filtrarPorPessoasEnvolvidas(List<Ocorrencia> todas, int minimo) {
         List<Ocorrencia> resultado = new ArrayList<>();
         for (Ocorrencia o : todas) {
@@ -98,8 +92,7 @@ public class Organizador {
         }
         return resultado;
     }
-    // regiao e tipo ja tem indice proprio no ConsultaRapida (Modulo 2); aqui so
-    // delega, pra nao duplicar os indices de categoria
+    // regiao e tipo ja tem indice no ConsultaRapida, so delega
     public List<Ocorrencia> filtrarPorRegiao(String regiao) {
         return consultaRapida.buscarPorRegiao(regiao);
     }
@@ -108,8 +101,7 @@ public class Organizador {
         return consultaRapida.buscarPorTipo(tipo);
     }
 
-    // versoes que filtram uma lista ja filtrada antes, pra poder combinar restricoes
-    // (ex: pendentes -> da regiao X -> do tipo EMS)
+    // filtram uma lista ja filtrada, para combinar restricoes
     public List<Ocorrencia> filtrarPorRegiao(List<Ocorrencia> lista, String regiao) {
         String regiaoNormalizada = normalizar(regiao);
         List<Ocorrencia> resultado = new ArrayList<>();

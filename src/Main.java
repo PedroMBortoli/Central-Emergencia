@@ -27,7 +27,7 @@ public class Main {
     private static final ResumoSelecao resumo = new ResumoSelecao();
     private static final RedeEmergencias rede = new RedeEmergencias();
 
-    // ultima lista de ocorrencias escolhidas no planejamento (usada no resumo do modulo 9)
+    // ultima selecao feita (usada no resumo do modulo 9)
     private static List<Ocorrencia> ultimaSelecao;
 
     private static CentralOcorrencias central;
@@ -75,7 +75,7 @@ public class Main {
     }
 
     // ===================== MODOS DE INTERAÇÃO =====================
-    // cada modo so junta os menus dos modulos que tem a mesma finalidade
+    // cada modo junta os menus dos modulos com a mesma finalidade
 
     private static void modoConsultaRapida() {
         System.out.println();
@@ -210,7 +210,7 @@ public class Main {
         }
     }
 
-    // integra com o T1: usa a regiao da ocorrencia (ja cadastrada na central) como destino do Dijkstra
+    // usa a regiao da ocorrencia como destino do Dijkstra
     private static void caminhoAteOcorrencia() {
         int id = lerInteiro("Id da ocorrência: ");
         Ocorrencia o = central.consultar(id);
@@ -510,7 +510,7 @@ public class Main {
         central = nova;
         integridade = new Integridade(central);
         arquivoCarregado = caminho;
-        // a selecao anterior era da base antiga, entao o resumo (modulo 9) nao vale mais
+        // a selecao era da base antiga
         ultimaSelecao = null;
         System.out.println(carregadas + " ocorrências carregadas de " + caminho + ".");
     }
@@ -543,8 +543,7 @@ public class Main {
         }
     }
 
-    // comeca com as pendentes e vai aplicando as restricoes que o usuario escolher,
-    // uma em cima da outra (assim da pra combinar regiao + tipo + prioridade etc)
+    // comeca com as pendentes e aplica as restricoes escolhidas, uma em cima da outra
     private static List<Ocorrencia> escolherCandidatas() {
         List<Ocorrencia> candidatas = central.getOrganizador().filtrarPorStatus("PENDENTE");
         String restricoes = "";
@@ -617,18 +616,17 @@ public class Main {
         }
         System.out.println("Tempo usado: " + tempoUsado + " de " + limiteTempo + " minutos.");
 
-        // guarda pra poder ver o resumo depois (modulo 9)
+        // guarda para o resumo (modulo 9)
         ultimaSelecao = selecionadas;
     }
 
     // ===================== MÓDULO 7 / OTIMIZAÇÃO DE RECURSOS =====================
 
-    // candidatas + tempo disponivel: a entrada comum da otimizacao e da comparacao de cenarios
+    // candidatas + tempo disponivel
     private record Cenario(List<Ocorrencia> candidatas, int capacidade) {
     }
 
-    // monta as candidatas com as restricoes e le o tempo disponivel;
-    // devolve null se nenhuma ocorrencia sobrou depois das restricoes
+    // devolve null se nenhuma ocorrencia passou nas restricoes
     private static Cenario prepararCenario() {
         List<Ocorrencia> candidatas = escolherCandidatas();
         if (candidatas.isEmpty()) {
@@ -724,7 +722,7 @@ public class Main {
         System.out.println("Obs.: é uma simulação para planejamento, não substitui os protocolos oficiais de atendimento.");
     }
 
-    // roda o mesmo conjunto de candidatas em 3 estrategias e mostra lado a lado
+    // mesmas candidatas em 3 estrategias, lado a lado
     private static void compararCenarios() {
         Cenario c = prepararCenario();
         if (c == null) {
