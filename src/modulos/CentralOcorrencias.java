@@ -155,14 +155,12 @@ public class CentralOcorrencias {
         return tabela.buscar(idBuscar);
     }
 
-    // da acesso aos indices de busca rapida (id, descricao por prefixo, tipo, regiao),
-    // sempre sincronizados com o que esta na tabela principal (carregar/cadastrar/remover)
+    // indices de busca rapida (id, descricao, tipo, regiao)
     public ConsultaRapida getConsultaRapida() {
         return consultaRapida;
     }
 
-    // da acesso aos filtros de organizacao (status, prioridade, pessoas envolvidas, regiao, tipo),
-    // sempre sincronizados com cadastro/remocao/alteracao de status
+    // filtros (status, prioridade, pessoas, regiao, tipo)
     public Organizador getOrganizador() {
         return organizador;
     }

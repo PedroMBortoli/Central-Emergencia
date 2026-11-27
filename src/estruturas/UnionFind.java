@@ -1,10 +1,6 @@
 package estruturas;
 
-// Estrutura de conjuntos disjuntos (Union-Find / Disjoint Set) implementada do
-// zero com vetor pai[], usada pelo Kruskal do modulo 8 pra decidir se uma
-// aresta fecha ciclo: dois vertices fecham ciclo quando ja estao no mesmo
-// conjunto, ou seja, ja existe algum caminho entre eles na arvore montada ate
-// agora.
+// Union-Find: diz se dois vertices ja estao conectados (usado no Kruskal para evitar ciclo).
 public class UnionFind {
 
     private final int[] pai;
@@ -19,9 +15,7 @@ public class UnionFind {
         }
     }
 
-    // acha o representante (raiz) do conjunto de x. Compressao de caminho: todo
-    // no visitado na subida passa a apontar direto pra raiz, achatando a arvore
-    // pras proximas chamadas.
+    // acha a raiz de x; no caminho, aponta todo mundo direto para a raiz
     public int find(int x) {
         if (pai[x] != x) {
             pai[x] = find(pai[x]);
@@ -29,9 +23,8 @@ public class UnionFind {
         return pai[x];
     }
 
-    // uniao por tamanho: a raiz do conjunto menor passa a apontar pra raiz do
-    // maior, mantendo a arvore rasa. Devolve false se x e y ja estavam no mesmo
-    // conjunto (uni-los fecharia um ciclo) e nao faz nada nesse caso.
+    // junta os conjuntos de x e y (o menor fica embaixo do maior).
+    // devolve false se ja estavam juntos (a aresta fecharia ciclo)
     public boolean union(int x, int y) {
         int raizX = find(x);
         int raizY = find(y);

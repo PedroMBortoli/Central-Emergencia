@@ -3,10 +3,8 @@ package estruturas;
 import java.util.ArrayList;
 import java.util.List;
 
-// Grafo nao direcionado e ponderado, com lista de adjacencia. Mesma ideia do
-// GrafoDirecionado do modulo 6: nome do vertice -> indice usando a TabelaHash
-// do grupo, so que aqui cada aresta tem um custo e aparece nas duas direcoes
-// (A-B e B-A), porque a rede de emergencias nao tem sentido de "mao unica".
+// Grafo nao direcionado e ponderado (lista de adjacencia).
+// Cada aresta entra na lista dos dois vertices.
 public class GrafoPonderado {
 
     public static class Aresta {
@@ -50,8 +48,7 @@ public class GrafoPonderado {
         return novo;
     }
 
-    // nao direcionado: a mesma aresta entra na lista de adjacencia dos dois vertices.
-    // recusa laco (a == b) e aresta repetida (mesmo par ja cadastrado).
+    // recusa laco, custo negativo e aresta repetida
     public boolean adicionarAresta(String a, String b, int custo) {
         int va = adicionarVertice(a);
         int vb = adicionarVertice(b);
@@ -97,7 +94,7 @@ public class GrafoPonderado {
         return new ArrayList<>(nomes);
     }
 
-    // vizinhos de um vertice (lista vazia se o nome nao existir ou o vertice for isolado)
+    // lista vazia se o vertice nao existir ou for isolado
     public List<Aresta> getVizinhos(String nome) {
         Integer v = indices.buscar(nome);
         if (v == null) {
@@ -106,8 +103,7 @@ public class GrafoPonderado {
         return new ArrayList<>(adjacencia.get(v));
     }
 
-    // todas as arestas do grafo, uma unica vez cada (origem < destino evita contar
-    // as duas direcoes da mesma aresta nao direcionada) - usado pelo Kruskal
+    // cada aresta uma vez so (origem < destino), usado pelo Kruskal
     public List<Aresta> getTodasArestas() {
         List<Aresta> resultado = new ArrayList<>();
         for (List<Aresta> lista : adjacencia) {

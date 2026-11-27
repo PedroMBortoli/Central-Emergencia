@@ -3,15 +3,8 @@ package estruturas;
 import java.util.ArrayList;
 import java.util.List;
 
-// Fila de prioridade (min-heap binario) implementada do zero - nada de
-// java.util.PriorityQueue - usada pelo Dijkstra do modulo 8 pra sempre
-// processar o vertice de menor distancia conhecida primeiro.
-//
-// Guarda pares (vertice, distancia) e usa delecao preguicosa: o mesmo vertice
-// pode ser inserido mais de uma vez, com distancias diferentes, toda vez que o
-// Dijkstra encontra um caminho melhor pra ele. Nao ha "diminuir chave" aqui -
-// quem usa o heap (RedeEmergencias.caminhoMinimo) ignora uma entrada retirada
-// cuja distancia ja foi superada por outra, mais barata, processada antes.
+// Min-heap: sempre devolve o item de menor distancia (usado no Dijkstra).
+// Um vertice pode entrar mais de uma vez; o Dijkstra ignora as entradas antigas.
 public class HeapMinimo {
 
     public static class Item {
@@ -47,7 +40,7 @@ public class HeapMinimo {
         subir(itens.size() - 1);
     }
 
-    // retira e devolve o item de menor distancia (a raiz do heap)
+    // tira a raiz (menor distancia)
     public Item remover() {
         Item raiz = itens.get(0);
         Item ultimo = itens.remove(itens.size() - 1);
@@ -58,7 +51,7 @@ public class HeapMinimo {
         return raiz;
     }
 
-    // sobe o item da posicao i enquanto ele for menor que o pai (restaura a propriedade de heap)
+    // sobe enquanto for menor que o pai
     private void subir(int i) {
         while (i > 0) {
             int pai = (i - 1) / 2;
@@ -70,7 +63,7 @@ public class HeapMinimo {
         }
     }
 
-    // desce o item da posicao i trocando com o menor filho, enquanto algum filho for menor
+    // desce trocando com o menor filho
     private void descer(int i) {
         int n = itens.size();
         while (true) {

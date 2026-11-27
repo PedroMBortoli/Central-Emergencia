@@ -19,9 +19,7 @@ public class ConsultaRapida {
         }
     }
 
-    // indexa uma unica ocorrencia nos 4 indices (id, descricao, tipo, regiao). Usado tanto
-    // pelo indexar() em lote (carga inicial) quanto por quem cadastra uma ocorrencia nova
-    // depois da carga.
+    // indexa uma ocorrencia nos 4 indices (id, descricao, tipo, regiao)
     public void adicionar(Ocorrencia o){
         indicePorId.inserir(o.getId(), o);
         indicePorDescricao.inserir(o.getDescricao(), o);
@@ -53,8 +51,7 @@ public class ConsultaRapida {
         return resolverIds(ids);
     }
 
-    // tira a ocorrencia dos 4 indices (id, descricao, tipo, regiao). Devolve false se
-    // o id nao estava indexado (nada a fazer) - nao lanca excecao nesse caso.
+    // tira a ocorrencia dos 4 indices; false se o id nao estava indexado
     public boolean remover(String id){
         Ocorrencia o = indicePorId.buscar(id);
         if (o == null){
@@ -69,14 +66,12 @@ public class ConsultaRapida {
         return true;
     }
 
-    // insere o id na lista de ids da categoria (tipo/regiao), criando a lista
-    // se ainda nao existir uma para aquela chave
+    // adiciona o id na lista da categoria (cria a lista se nao existir)
     private void adicionarEmLista(TabelaHash<String, List<String>> indice, String chave, String id) {
         indice.buscarOuInserir(normalizar(chave), ArrayList::new).add(id);
     }
 
-    // tira o id da lista de uma categoria (tipo/regiao); se a lista ficar vazia,
-    // remove a propria entrada do indice para nao acumular categorias "mortas"
+    // tira o id da categoria; se a lista ficar vazia, remove a categoria
     private void removerDeLista(TabelaHash<String, List<String>> indice, String chave, String id) {
         String chaveNormalizada = normalizar(chave);
         List<String> lista = indice.buscar(chaveNormalizada);
@@ -89,11 +84,11 @@ public class ConsultaRapida {
         }
     }
 
-    // troca uma lista de ids pelas ocorrencias de verdade, buscando cada uma no indice por id
+    // troca os ids pelas ocorrencias
     private List<Ocorrencia> resolverIds(List<String> ids) {
         List<Ocorrencia> resultado = new ArrayList<>();
         if (ids == null) {
-            return resultado; // categoria nao encontrada: lista vazia, nao null
+            return resultado; // categoria nao encontrada
         }
         for (String id : ids) {
             Ocorrencia o = indicePorId.buscar(id);
@@ -104,7 +99,7 @@ public class ConsultaRapida {
         return resultado;
     }
 
-    // mesmo padrao de normalizacao usado no cadastro: sem espaco nas pontas, maiusculo
+    // sem espaco nas pontas, maiusculo
     private String normalizar(String valor) {
         return valor == null ? "" : valor.trim().toUpperCase();
     }

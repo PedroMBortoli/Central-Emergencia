@@ -7,9 +7,8 @@ import java.util.Comparator;
 
 public class OrdenadorAtendimento {
 
-    // estabelece a ordem de atendimento combinando criterios: prioridade mais alta primeiro,
-    // pessoas envolvidas como 1o desempate, tempo estimado (menor primeiro) como 2o desempate.
-    // nao modifica a lista recebida, devolve uma copia ordenada.
+    // ordem de atendimento: prioridade (maior primeiro), depois pessoas, depois tempo (menor primeiro).
+    // devolve uma copia, nao mexe na lista original
     public List<Ocorrencia> ordenarPorPrioridade(List<Ocorrencia> ocorrencias) {
         List<Ocorrencia> ordenada = new ArrayList<>(ocorrencias);
         mergeSort(ordenada, this::compararPorPrioridade);
@@ -44,8 +43,7 @@ public class OrdenadorAtendimento {
         return a.getTempoEstimado() - b.getTempoEstimado();
     }
 
-    // outro criterio: atendimentos mais rapidos primeiro, pra liberar as equipes antes;
-    // desempata por prioridade e depois pessoas
+    // mais rapidos primeiro (libera as equipes antes); desempata por prioridade e pessoas
     public List<Ocorrencia> ordenarPorTempo(List<Ocorrencia> ocorrencias) {
         List<Ocorrencia> ordenada = new ArrayList<>(ocorrencias);
         mergeSort(ordenada, this::compararPorTempo);
@@ -62,15 +60,12 @@ public class OrdenadorAtendimento {
         return b.getPessoasEnvolvidas() - a.getPessoasEnvolvidas();
     }
 
-    // ALGORITMO GULOSO: seleciona quais ocorrencias atender dado um limite de tempo
-    // (ex: tempo total disponivel das equipes). A cada passo, escolhe a ocorrencia de
-    // maior "densidade de impacto" (prioridade x pessoas envolvidas, por unidade de tempo
-    // que ela consome) dentre as que ainda cabem no tempo restante - e nunca reconsidera
-    // essa escolha depois (caracteristica central de um algoritmo guloso).
+    // GULOSO: ordena por densidade (prioridade x pessoas / tempo) e pega cada ocorrencia
+    // que ainda cabe no tempo, sem voltar atras
     public List<Ocorrencia> selecionarComLimiteDeTempo(List<Ocorrencia> pendentes, int limiteTempo) {
         List<Ocorrencia> candidatas = new ArrayList<>(pendentes);
 
-        // ordena por densidade de impacto decrescente (maior prioridade x pessoas, menor tempo)
+        // maior densidade primeiro
         mergeSort(candidatas, this::compararPorDensidade);
 
         List<Ocorrencia> selecionadas = new ArrayList<>();
@@ -79,9 +74,7 @@ public class OrdenadorAtendimento {
         for (Ocorrencia o : candidatas) {
             int tempo = o.getTempoEstimado();
 
-            // escolha gulosa: se essa ocorrencia cabe no tempo restante, pega ela agora
-            // e nunca mais revisita essa decisao; se nao cabe, pula (nao tenta trocar
-            // depois por uma combinacao melhor - isso seria busca exaustiva, nao guloso)
+            // se cabe, pega e nao revisita a decisao
             if (tempoUsado + tempo <= limiteTempo) {
                 selecionadas.add(o);
                 tempoUsado += tempo;
@@ -99,20 +92,14 @@ public class OrdenadorAtendimento {
         return 0;
     }
 
-    // impacto (prioridade x pessoas envolvidas) por unidade de tempo estimado;
-    // usa Math.max(1, tempo) so para esse calculo, pra nao dividir por zero
-    // caso uma ocorrencia tenha tempo estimado 0 (nao afeta o tempo somado na selecao)
+    // (prioridade x pessoas) / tempo; Math.max evita divisao por zero
     private double calcularDensidade(Ocorrencia o) {
         double impacto = o.getPrioridade() * o.getPessoasEnvolvidas();
         return impacto / Math.max(1, o.getTempoEstimado());
     }
 
-    // MERGE SORT implementado do zero (sem usar List.sort/Collections.sort/Arrays.sort):
-    // O(n log n) e estavel - divide a lista ao meio recursivamente ate sobrar 1 elemento,
-    // ordena cada metade e intercala as duas metades ja ordenadas.
-    // 'comparador' define apenas o CRITERIO de comparacao (qual veio primeiro);
-    // o algoritmo de ordenacao em si (a divisao e a intercalacao) e todo escrito aqui.
-    // generico e estatico pra outros modulos do pacote reaproveitarem (ex: ResumoSelecao).
+    // MERGE SORT: O(n log n) e estavel. Divide ao meio, ordena cada metade e intercala.
+    // generico para ser reaproveitado em outros modulos
     static <T> void mergeSort(List<T> lista, Comparator<T> comparador) {
         if (lista.size() <= 1) {
             return; // lista de 0 ou 1 elemento ja esta ordenada
@@ -128,9 +115,7 @@ public class OrdenadorAtendimento {
         intercalar(lista, esquerda, direita, comparador);
     }
 
-    // junta as duas metades (ja ordenadas) de volta em 'destino', mantendo a ordem;
-    // em caso de empate, prioriza o elemento da esquerda primeiro - e isso que garante
-    // a estabilidade (quem entrou primeiro na lista original sai primeiro em empate)
+    // intercala as duas metades; no empate pega a da esquerda (deixa o sort estavel)
     private static <T> void intercalar(List<T> destino, List<T> esquerda, List<T> direita, Comparator<T> comparador) {
         int i = 0, j = 0, k = 0;
 

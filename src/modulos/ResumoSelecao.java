@@ -5,10 +5,7 @@ import modelo.Ocorrencia;
 
 import java.util.List;
 
-// Modulo 9: resumo das ocorrencias selecionadas no planejamento (modulo 7 ou guloso do modulo 5).
-// Ideia: depois de escolher quem vai ser atendido, a central precisa saber pra onde vao as
-// equipes e quais viaturas vao sair. Entao a gente junta as selecionadas por regiao e por tipo
-// usando a TabelaHash do T1 (chave = nome da regiao/tipo).
+// Modulo 9: resume a ultima selecao por tipo e por regiao (quais viaturas saem e para onde).
 public class ResumoSelecao {
 
     // um grupo do resumo (uma regiao ou um tipo)
@@ -60,7 +57,7 @@ public class ResumoSelecao {
         return ordenarPorQuantidade(tabela.listarTodos());
     }
 
-    // acha o grupo da chave (ou cria se ainda nao existe) e soma a ocorrencia nele
+    // busca ou cria o grupo e soma a ocorrencia
     private void somar(TabelaHash<String, Grupo> tabela, String chave, Ocorrencia o) {
         Grupo g = tabela.buscarOuInserir(chave, () -> new Grupo(chave));
         g.quantidade++;
@@ -69,7 +66,7 @@ public class ResumoSelecao {
         g.somaPrioridade += o.getPrioridade();
     }
 
-    // do maior grupo pro menor, reaproveitando o merge sort (estavel) do modulo 5
+    // maior grupo primeiro (merge sort do modulo 5)
     private List<Grupo> ordenarPorQuantidade(List<Grupo> grupos) {
         OrdenadorAtendimento.mergeSort(grupos, (a, b) -> Integer.compare(b.quantidade, a.quantidade));
         return grupos;
